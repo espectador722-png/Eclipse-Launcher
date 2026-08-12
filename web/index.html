@@ -1,0 +1,158 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>Eclipse Launcher</title>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<canvas id="bg-canvas"></canvas>
+<div class="bg-gradient"></div>
+
+<div class="titlebar" id="titlebar">
+  <span class="titlebar-brand">🌙 ECLIPSE</span>
+  <div class="titlebar-btns">
+    <button id="btn-settings" title="Configuración">⚙</button>
+    <button id="btn-min" title="Minimizar">—</button>
+    <button id="btn-close" title="Cerrar">✕</button>
+  </div>
+</div>
+
+<!-- Rail de apps, a la izquierda — hoy solo Eclipse Tools, el resto son
+     casilleros reservados para el día que haya más de una herramienta
+     acá adentro (mismo patrón que el selector de juegos de otros
+     launchers, pero sin nada de arte/branding ajeno). -->
+<nav class="app-rail">
+  <button class="app-rail-item active" title="Eclipse Tools">🌙</button>
+  <button class="app-rail-item app-rail-empty" disabled title="Próximamente">?</button>
+  <button class="app-rail-item app-rail-empty" disabled title="Próximamente">?</button>
+  <button class="app-rail-item app-rail-empty" disabled title="Próximamente">?</button>
+</nav>
+
+<!-- Rail de links sociales, arriba a la derecha -->
+<nav class="social-rail">
+  <a href="#" class="social-btn" data-link="discord" title="Discord">💬</a>
+  <a href="#" class="social-btn" data-link="docs" title="Documentación">📘</a>
+  <a href="#" class="social-btn" data-link="web" title="Sitio web">🌐</a>
+</nav>
+
+<main class="stage">
+  <div class="hero">
+    <div class="hero-badge">LAUNCHER OFICIAL</div>
+    <h1 class="hero-title">ECLIPSE <span>TOOLS</span></h1>
+    <p class="hero-sub">Traducí tus visual novels favoritas — Ren'Py, RPG Maker, Godot y Unity.</p>
+  </div>
+
+  <!-- Tarjeta de novedades flotante, estilo carrusel -->
+  <section class="news-card">
+    <div class="news-carousel" id="news-carousel">
+      <div class="news-slide active">
+        <div class="news-slide-tag">NOVEDAD</div>
+        <div class="news-slide-title">Motor Multi-Engine renovado</div>
+        <div class="news-slide-sub">Google + Yandex + MyMemory, más rápido y confiable.</div>
+      </div>
+      <div class="news-slide">
+        <div class="news-slide-tag">MEJORA</div>
+        <div class="news-slide-title">Interfaz reorganizada</div>
+        <div class="news-slide-sub">Secciones plegables en Ren'Py, RPG Maker y Config.</div>
+      </div>
+      <div class="news-slide">
+        <div class="news-slide-tag">FIX</div>
+        <div class="news-slide-title">Nombres compuestos arreglados</div>
+        <div class="news-slide-sub">"Uncle Pete" y similares ya traducen bien.</div>
+      </div>
+    </div>
+    <div class="news-dots" id="news-dots"></div>
+
+    <div class="news-tabs">
+      <button class="news-tab active" data-tab="eventos">Eventos</button>
+      <button class="news-tab" data-tab="noticias">Noticias</button>
+      <button class="news-tab" data-tab="info">Información</button>
+    </div>
+    <ul class="news-list" id="news-list"></ul>
+  </section>
+
+  <!-- Accesos rápidos -->
+  <div class="quicklinks">
+    <button class="quicklink" data-link="discord">
+      <span class="quicklink-icon">💬</span><span>Discord</span>
+    </button>
+    <button class="quicklink" data-link="report">
+      <span class="quicklink-icon">🐞</span><span>Reportar bug</span>
+    </button>
+    <button class="quicklink" data-link="docs">
+      <span class="quicklink-icon">📘</span><span>Guías</span>
+    </button>
+    <button class="quicklink" data-link="folder" id="quicklink-folder">
+      <span class="quicklink-icon">📂</span><span>Carpeta</span>
+    </button>
+  </div>
+</main>
+
+<!-- Barra de acción inferior — info a la izquierda, botón grande a la derecha -->
+<footer class="actionbar">
+  <div class="actionbar-left" id="actionbar-left">
+    <div class="dl-ring" id="dl-ring" hidden>
+      <svg viewBox="0 0 40 40">
+        <circle class="dl-ring-track" cx="20" cy="20" r="17"></circle>
+        <circle class="dl-ring-fill" id="dl-ring-fill" cx="20" cy="20" r="17"></circle>
+      </svg>
+      <span class="dl-ring-pct" id="dl-ring-pct">0</span>
+    </div>
+    <div class="actionbar-info">
+      <span class="dock-version" id="dock-version">Launcher v—</span>
+      <span class="dock-installed" id="dock-installed">Comprobando instalación…</span>
+      <p class="dock-status" id="dock-status"></p>
+    </div>
+  </div>
+
+  <div class="actionbar-right">
+    <button class="btn-shortcut" id="btn-shortcut" title="Elegir dónde crear el acceso directo">
+      <span class="btn-shortcut-icon">📁</span>
+    </button>
+    <div class="btn-main-group">
+      <button class="btn-main" id="btn-main" disabled>
+        <span class="btn-main-icon" id="btn-main-icon">⬇</span>
+        <span class="btn-main-label" id="btn-main-label">Descargar</span>
+      </button>
+      <button class="btn-more" id="btn-more" title="Más opciones">☰</button>
+      <div class="more-menu" id="more-menu" hidden>
+        <button data-action="redownload">⬇ Descargar de nuevo / reparar</button>
+        <button data-action="folder">📂 Abrir carpeta de instalación</button>
+        <button data-action="shortcut">🔗 Crear acceso directo</button>
+      </div>
+    </div>
+  </div>
+</footer>
+
+<!-- Panel de configuración del launcher -->
+<div class="settings-overlay" id="settings-overlay" hidden>
+  <div class="settings-panel">
+    <div class="settings-head">
+      <h2>Configuración</h2>
+      <button class="settings-close" id="settings-close">✕</button>
+    </div>
+    <label class="settings-row">
+      <span>Iniciar con Windows</span>
+      <input type="checkbox" id="setting-startup">
+    </label>
+    <label class="settings-row">
+      <span>Buscar actualizaciones al abrir</span>
+      <input type="checkbox" id="setting-autocheck" checked>
+    </label>
+    <label class="settings-row">
+      <span>Cerrar el launcher al abrir Eclipse Tools</span>
+      <input type="checkbox" id="setting-closeonlaunch" checked>
+    </label>
+    <div class="settings-row settings-row-static">
+      <span>Carpeta de instalación</span>
+      <button class="settings-link" id="settings-open-folder">Abrir carpeta</button>
+    </div>
+    <div class="settings-foot">Eclipse Launcher v<span id="settings-version">—</span></div>
+  </div>
+</div>
+
+<script src="js/launcher.js"></script>
+</body>
+</html>
