@@ -275,6 +275,14 @@ body{ border-radius: 12px; overflow: hidden; }
 .actionbar-info{ display: flex; flex-direction: column; gap: 3px; min-width: 150px; }
 .dock-version{ font-size: 11px; color: var(--text3); }
 .dock-installed{ font-size: 11px; color: var(--text2); font-weight: 600; }
+.dock-update-badge{
+  display: inline-flex; align-items: center; gap: 4px; width: fit-content;
+  font-size: 10px; font-weight: 700; color: var(--accent);
+  background: var(--accent-dim); border: 1px solid rgba(37,211,238,.35);
+  padding: 2px 9px; border-radius: 999px; margin-top: 2px;
+  animation: pulse-dot 1.8s ease-in-out infinite;
+}
+.dock-update-badge[hidden]{ display: none; }
 .dock-status{
   margin: 0; font-size: 11px; color: var(--text2); min-height: 14px;
   transition: opacity .15s ease;

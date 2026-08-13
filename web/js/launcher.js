@@ -24,14 +24,27 @@ async function refreshState() {
   LAST_STATE = st;
   document.getElementById("dock-version").textContent = `Launcher v${st.launcherVersion}`;
   const installedEl = document.getElementById("dock-installed");
+  const badge = document.getElementById("dock-update-badge");
   const btn = document.getElementById("btn-main");
   btn.disabled = false;
   btn.classList.remove("error", "busy");
-  if (st.installed) {
+  // v1.0.1 — 3 estados reales, no solo instalado/no-instalado: si hay
+  // versión más nueva que la instalada, el botón ofrece ACTUALIZAR en
+  // vez de Jugar (mismo criterio que cualquier launcher de juego real
+  // — HoYoPlay, Steam, etc. — nunca te dejan jugando una versión vieja
+  // sin avisarte primero).
+  if (st.installed && st.updateAvailable) {
     installedEl.textContent = `Instalado: v${st.installedVersion || "?"}`;
+    badge.hidden = false;
+    badge.textContent = `✨ Versión ${st.latestVersion} disponible`;
+    setMainButton("update", "Actualizar");
+  } else if (st.installed) {
+    installedEl.textContent = `Instalado: v${st.installedVersion || "?"}`;
+    badge.hidden = true;
     setMainButton("play", "Jugar");
   } else {
     installedEl.textContent = "No instalado todavía";
+    badge.hidden = true;
     setMainButton("download", "Descargar");
   }
 }
@@ -193,6 +206,10 @@ const NEWS_TAB_CONTENT = {
       "Busca e instala sus propias actualizaciones — no hace falta volver a bajar nada a mano."],
     ["Licencia paga", "",
       "Desbloquea el traductor OCR (texto dentro de imágenes) y los motores por IA (LLM)."],
+    ["Interfaz organizada", "",
+      "Secciones plegables por juego (Juego / Traducir / Herramientas / Mantenimiento) — nada de listas larguísimas."],
+    ["Gratis para empezar", "",
+      "Todo lo esencial funciona sin licencia — la paga solo agrega OCR y motores por IA."],
   ],
 };
 function renderNewsTab(tabId) {

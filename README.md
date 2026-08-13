@@ -34,7 +34,23 @@ sin que tengas que volver a bajar nada a mano.
 
 <br>
 
-## ✨ Qué hace
+## 🎮 ¿Qué hace Eclipse Tools?
+
+Eclipse Tools es el traductor real — la herramienta con IA que instala este launcher. Esto es lo que trae:
+
+- 🕹️ **Motores soportados** — Ren'Py, RPG Maker (MV/MZ/XP/VX/Ace), Godot y Unity.
+- 🌐 **Motores de traducción** — online (Google, Yandex, MyMemory en cascada) o 100% local/offline, sin depender de internet.
+- 🗜️ **Compresor de imágenes** — reduce el peso de los assets del juego sin perder calidad visible.
+- 📗 **Glosario propio** — términos que siempre se traducen igual, en todos los motores.
+- 🔍 **Buscar y reemplazar** — corregí traducciones puntuales sin volver a traducir todo el juego.
+- 🩺 **Diagnóstico automático** — detecta texto que quedó sin traducir o traducciones rotas.
+- 🚀 **Instalador guiado** — wizard paso a paso para empaquetar/proteger el mod ya traducido.
+- 🔄 **Se actualiza solo** — busca e instala sus propias actualizaciones desde adentro.
+- 🆓 **Gratis para empezar** — todo lo de arriba funciona sin licencia; la paga solo suma OCR (texto dentro de imágenes) y motores por IA (LLM).
+
+<br>
+
+## ✨ Qué hace el Launcher
 
 | | |
 |---|---|

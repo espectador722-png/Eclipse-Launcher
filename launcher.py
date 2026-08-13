@@ -224,12 +224,33 @@ class Api:
         self._window = w
 
     def get_state(self, _=None):
+        """v1.0.1 — ahora TAMBIÉN chequea si hay una actualización de
+        Eclipse Tools disponible (no solo si está instalado). Antes el
+        botón principal solo distinguía Descargar/Jugar — una vez
+        instalado quedaba en "Jugar" para siempre, aunque hubiera
+        versión nueva, así que el launcher nunca ofrecía actualizar (a
+        diferencia de un launcher de juego real, que muestra
+        Actualizar/Pre-descarga cuando corresponde). El chequeo de red
+        es best-effort: si falla (sin internet), simplemente no se
+        marca actualización disponible — no bloquea nada."""
         installed_exe = _find_installed_exe()
         st = _load_state()
+        installed_v = st.get("installed_version", "") if installed_exe else ""
+        update_available = False
+        latest_v = ""
+        try:
+            manifest = fetch_manifest(timeout=5)
+            latest_v = manifest.get("tools_version", "")
+            if installed_exe and latest_v and _ver(latest_v) > _ver(installed_v):
+                update_available = True
+        except Exception:
+            pass
         return {
             "installed": installed_exe is not None,
-            "installedVersion": st.get("installed_version", ""),
+            "installedVersion": installed_v,
             "launcherVersion": LAUNCHER_VERSION,
+            "updateAvailable": update_available,
+            "latestVersion": latest_v,
         }
 
     def check_and_install(self, shortcut_mode="desktop", call_id=None):
