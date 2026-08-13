@@ -45,7 +45,7 @@ import webview
 
 APP_NAME = "EclipseTools"
 LICENSE_API_BASE = "https://eclipse-license.espectador722.workers.dev"
-LAUNCHER_VERSION = "1.0.0"
+LAUNCHER_VERSION = "1.0.1"
 
 _HERE = os.path.dirname(os.path.abspath(__file__))
 
