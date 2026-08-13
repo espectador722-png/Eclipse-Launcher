@@ -8,15 +8,70 @@
 <body>
 
 <canvas id="bg-canvas"></canvas>
+
+<!-- Ilustración de fondo — un eclipse propio (luna + corona), diseño
+     100% original, nada de arte con licencia de terceros. -->
+<svg class="hero-art" viewBox="0 0 1180 760" preserveAspectRatio="xMaxYMid slice" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <radialGradient id="corona" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#25d3ee" stop-opacity="0"/>
+      <stop offset="62%" stop-color="#25d3ee" stop-opacity="0"/>
+      <stop offset="78%" stop-color="#57e0f5" stop-opacity=".9"/>
+      <stop offset="88%" stop-color="#25d3ee" stop-opacity=".25"/>
+      <stop offset="100%" stop-color="#25d3ee" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="moon" cx="38%" cy="38%" r="65%">
+      <stop offset="0%" stop-color="#232a38"/>
+      <stop offset="60%" stop-color="#141821"/>
+      <stop offset="100%" stop-color="#05070b"/>
+    </radialGradient>
+    <radialGradient id="glow-soft" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#25d3ee" stop-opacity=".35"/>
+      <stop offset="100%" stop-color="#25d3ee" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+
+  <circle cx="900" cy="330" r="330" fill="url(#glow-soft)"/>
+  <circle class="hero-art-ring" cx="900" cy="330" r="270" fill="none" stroke="rgba(37,211,238,.18)" stroke-width="1"/>
+  <circle class="hero-art-ring" cx="900" cy="330" r="235" fill="none" stroke="rgba(37,211,238,.12)" stroke-width="1"/>
+  <circle cx="900" cy="330" r="190" fill="url(#corona)"/>
+  <circle cx="900" cy="330" r="150" fill="url(#moon)"/>
+  <circle cx="900" cy="330" r="150" fill="none" stroke="rgba(37,211,238,.5)" stroke-width="1.5"/>
+
+  <g class="hero-art-stars">
+    <circle cx="640" cy="120" r="2"/><circle cx="700" cy="500" r="1.6"/>
+    <circle cx="1080" cy="90" r="1.8"/><circle cx="1120" cy="600" r="2.2"/>
+    <circle cx="560" cy="330" r="1.4"/><circle cx="980" cy="650" r="1.6"/>
+    <circle cx="1150" cy="380" r="1.4"/><circle cx="820" cy="70" r="1.8"/>
+  </g>
+</svg>
+
 <div class="bg-gradient"></div>
 
+<!-- v1.0.2 — la clase "pywebview-drag-region" va SOLO en el logo y en
+     el espaciador vacío, nunca en .titlebar-btns: con
+     DRAG_REGION_DIRECT_TARGET_ONLY=True (ver launcher.py) el arrastre
+     solo dispara si el click cae justo en un elemento con esa clase,
+     así los botones de minimizar/cerrar/config siguen siendo clicks
+     normales aunque estén DENTRO de la misma barra visualmente. -->
 <div class="titlebar" id="titlebar">
-  <span class="titlebar-brand">🌙 ECLIPSE</span>
+  <span class="titlebar-brand pywebview-drag-region">🌙 ECLIPSE</span>
+  <span class="titlebar-spacer pywebview-drag-region"></span>
   <div class="titlebar-btns">
     <button id="btn-settings" title="Configuración">⚙</button>
     <button id="btn-min" title="Minimizar">—</button>
     <button id="btn-close" title="Cerrar">✕</button>
   </div>
+</div>
+
+<!-- Radio flotante — mismo mecanismo que el sitio (EZ_RADIO_TRACKS,
+     fade-in de volumen, autoplay tras el primer click/touch real por
+     las políticas de autoplay del navegador). -->
+<audio id="bg-audio" preload="auto"></audio>
+<div class="radio-widget" id="radio-widget" style="display:none">
+  <button id="radio-toggle" title="Pausar/reproducir"><span id="radio-toggle-icon">▶</span></button>
+  <span class="radio-track-name" id="radio-track-name">Cargando…</span>
+  <button class="radio-ghost" id="radio-next" title="Siguiente canción">⏭</button>
 </div>
 
 <!-- Rail de apps, a la izquierda — hoy solo Eclipse Tools, el resto son
@@ -108,9 +163,22 @@
   </div>
 
   <div class="actionbar-right">
-    <button class="btn-shortcut" id="btn-shortcut" title="Elegir dónde crear el acceso directo">
-      <span class="btn-shortcut-icon">📁</span>
-    </button>
+    <!-- v1.0.1 — BUGFIX de UX reportado: el diálogo nativo de Windows
+         (gris, sin nada del estilo del launcher) desentonaba con el
+         resto de la app. Ahora Escritorio/Menú Inicio se resuelven
+         solos, SIN diálogo — "Elegir otra carpeta…" sigue existiendo
+         como salida para quien de verdad quiera algo distinto, pero ya
+         no es el camino por defecto. -->
+    <div class="btn-shortcut-group">
+      <button class="btn-shortcut" id="btn-shortcut" title="Dónde crear el acceso directo">
+        <span class="btn-shortcut-icon">📁</span>
+      </button>
+      <div class="more-menu shortcut-menu" id="shortcut-menu" hidden>
+        <button data-shortcut="desktop">🖥️ Escritorio</button>
+        <button data-shortcut="startmenu">📌 Menú Inicio</button>
+        <button data-shortcut="browse">📁 Elegir otra carpeta…</button>
+      </div>
+    </div>
     <div class="btn-main-group">
       <button class="btn-main" id="btn-main" disabled>
         <span class="btn-main-icon" id="btn-main-icon">⬇</span>
@@ -150,6 +218,21 @@
       <button class="settings-link" id="settings-open-folder">Abrir carpeta</button>
     </div>
     <div class="settings-foot">Eclipse Launcher v<span id="settings-version">—</span></div>
+  </div>
+</div>
+
+<!-- v1.0.2 — BUGFIX reportado: la tarjeta de novedades es chica y sin
+     scroll, así que el detalle de cada ítem no entraba desplegado ahí
+     adentro. Ahora cada ítem abre este panel aparte, con espacio real
+     y su propio scroll. -->
+<div class="settings-overlay" id="news-detail-overlay" hidden>
+  <div class="settings-panel news-detail-panel">
+    <div class="settings-head">
+      <span class="news-detail-tag" id="news-detail-tag"></span>
+      <button class="settings-close" id="news-detail-close">✕</button>
+    </div>
+    <h2 class="news-detail-title" id="news-detail-title"></h2>
+    <p class="news-detail-body" id="news-detail-body"></p>
   </div>
 </div>
 

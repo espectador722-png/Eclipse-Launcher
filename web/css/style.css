@@ -22,25 +22,66 @@ html, body{
   user-select: none;
 }
 
+/* Ventana sin chrome nativo (frameless=True en launcher.py) — este
+   borde+radio simulan el marco de una app de escritorio normal. */
+html{ border: 1px solid rgba(255,255,255,.09); border-radius: 12px; }
+body{ border-radius: 12px; overflow: hidden; }
+
 #bg-canvas{ position: fixed; inset: 0; z-index: 0; }
+
+.hero-art{ position: fixed; inset: 0; z-index: 1; width: 100%; height: 100%; pointer-events: none; }
+.hero-art-ring{ animation: ring-spin 90s linear infinite; transform-origin: 900px 330px; }
+.hero-art-ring:nth-of-type(2){ animation-duration: 130s; animation-direction: reverse; }
+@keyframes ring-spin{ from{ transform: rotate(0deg); } to{ transform: rotate(360deg); } }
+.hero-art-stars circle{ fill: #cdeef6; opacity: .55; animation: twinkle 3.4s ease-in-out infinite; }
+.hero-art-stars circle:nth-child(2n){ animation-delay: .8s; }
+.hero-art-stars circle:nth-child(3n){ animation-delay: 1.6s; }
+@keyframes twinkle{ 0%,100%{ opacity: .25; } 50%{ opacity: .8; } }
+
 .bg-gradient{
-  position: fixed; inset: 0; z-index: 1; pointer-events: none;
+  position: fixed; inset: 0; z-index: 2; pointer-events: none;
   background:
-    radial-gradient(1100px 650px at 78% 8%, rgba(37,211,238,.16), transparent 60%),
-    radial-gradient(800px 500px at 10% 100%, rgba(37,211,238,.08), transparent 55%),
-    linear-gradient(180deg, rgba(11,14,20,.2) 0%, rgba(11,14,20,.55) 70%, rgba(11,14,20,.92) 100%);
+    linear-gradient(100deg, rgba(11,14,20,.98) 0%, rgba(11,14,20,.88) 32%, rgba(11,14,20,.35) 58%, rgba(11,14,20,.15) 100%),
+    linear-gradient(180deg, rgba(11,14,20,.1) 0%, rgba(11,14,20,.35) 72%, rgba(11,14,20,.88) 100%);
+}
+
+/* ── radio flotante ── */
+.radio-widget{
+  position: fixed; left: 20px; bottom: 90px; z-index: 15;
+  display: flex; align-items: center; gap: 10px;
+  background: rgba(12,15,22,.82); backdrop-filter: blur(12px);
+  border: 1px solid var(--border); border-radius: 999px;
+  padding: 7px 16px 7px 7px; max-width: 240px;
+  box-shadow: 0 10px 28px -10px rgba(0,0,0,.6);
+}
+.radio-widget button{
+  width: 30px; height: 30px; border-radius: 50%; border: none; cursor: pointer;
+  flex: none; display: flex; align-items: center; justify-content: center;
+  background: linear-gradient(135deg, var(--accent-hover), var(--accent));
+  color: var(--accent-text); font-size: 11px;
+}
+.radio-widget button.radio-ghost{
+  width: 24px; height: 24px; background: rgba(255,255,255,.08); color: var(--text2); font-size: 10px;
+}
+.radio-track-name{
+  font-size: 10.5px; color: var(--text2); white-space: nowrap;
+  overflow: hidden; text-overflow: ellipsis; max-width: 120px;
 }
 
 /* ── barra de título propia (frameless look, pero con controles) ── */
 .titlebar{
-  position: fixed; top: 0; left: 0; right: 0; height: 40px; z-index: 20;
-  display: flex; align-items: center; justify-content: space-between;
-  padding: 0 6px 0 16px; -webkit-app-region: drag;
+  position: fixed; top: 0; left: 0; right: 0; height: 44px; z-index: 20;
+  display: flex; align-items: center;
+  padding: 0 8px 0 18px;
 }
 .titlebar-brand{
   font-size: 11px; font-weight: 800; letter-spacing: .18em; color: var(--text3);
 }
-.titlebar-btns{ display: flex; -webkit-app-region: no-drag; }
+/* Ocupa todo el espacio vacío entre el logo y los botones — ahí es
+   donde el usuario espera poder arrastrar la ventana (ver la clase
+   pywebview-drag-region en index.html + comentario en launcher.py). */
+.titlebar-spacer{ flex: 1; height: 100%; }
+.titlebar-btns{ display: flex; }
 .titlebar-btns button{
   width: 40px; height: 34px; border: none; background: transparent; color: var(--text2);
   font-size: 13px; cursor: pointer; border-radius: 6px; transition: background .12s ease;
@@ -50,7 +91,7 @@ html, body{
 
 /* ── rail de apps, a la izquierda (reservado para el futuro) ── */
 .app-rail{
-  position: fixed; top: 52px; left: 18px; z-index: 15;
+  position: fixed; top: 58px; left: 18px; z-index: 15;
   display: flex; flex-direction: column; gap: 10px;
 }
 .app-rail-item{
@@ -68,7 +109,7 @@ html, body{
 
 /* ── rail social, arriba a la derecha ── */
 .social-rail{
-  position: fixed; top: 52px; right: 18px; z-index: 15;
+  position: fixed; top: 58px; right: 18px; z-index: 15;
   display: flex; flex-direction: column; gap: 8px;
 }
 .social-btn{
@@ -84,8 +125,8 @@ html, body{
 .stage{
   position: relative; z-index: 5;
   height: 100%; display: flex; flex-direction: column; justify-content: center;
-  gap: 22px; padding: 76px 60px 108px 96px;
-  max-width: 660px;
+  gap: 28px; padding: 84px 60px 128px 110px;
+  max-width: 700px;
 }
 .hero{ animation: hero-in .5s cubic-bezier(.2,.8,.2,1) both; }
 @keyframes hero-in{
@@ -94,45 +135,56 @@ html, body{
 }
 .hero-badge{
   display: inline-flex; align-items: center; gap: 6px;
-  font-size: 10px; font-weight: 800; letter-spacing: .14em;
+  font-size: 10.5px; font-weight: 800; letter-spacing: .14em;
   color: var(--accent); background: var(--accent-dim);
   border: 1px solid rgba(37,211,238,.35);
-  padding: 5px 12px; border-radius: 999px; margin-bottom: 14px;
+  padding: 6px 14px; border-radius: 999px; margin-bottom: 18px;
 }
 .hero-badge::before{ content: "●"; font-size: 7px; animation: pulse-dot 1.8s ease-in-out infinite; }
 @keyframes pulse-dot{ 0%,100%{ opacity: 1; } 50%{ opacity: .35; } }
 .hero-title{
-  margin: 0 0 8px; font-size: 34px; font-weight: 800; letter-spacing: .04em;
-  color: var(--text); text-shadow: 0 2px 24px rgba(37,211,238,.18);
+  margin: 0 0 12px; font-size: 52px; font-weight: 800; letter-spacing: .03em;
+  color: var(--text); text-shadow: 0 2px 30px rgba(37,211,238,.22);
+  line-height: 1.05;
 }
 .hero-title span{ color: var(--accent); }
-.hero-sub{ margin: 0; font-size: 13px; line-height: 1.6; color: var(--text2); max-width: 380px; }
+.hero-sub{ margin: 0; font-size: 15px; line-height: 1.6; color: var(--text2); max-width: 420px; }
 
 /* ── tarjeta de novedades flotante ── */
 .news-card{
-  width: 320px; border-radius: 16px; overflow: hidden;
+  width: 380px; border-radius: 18px; overflow: hidden;
   background: rgba(12,15,22,.72); backdrop-filter: blur(10px);
   border: 1px solid var(--border);
   box-shadow: 0 18px 40px -14px rgba(0,0,0,.6);
   animation: hero-in .5s cubic-bezier(.2,.8,.2,1) .08s both;
 }
-.news-carousel{ position: relative; height: 92px; }
+.news-carousel{ position: relative; height: 104px; }
 .news-slide{
   position: absolute; inset: 0; padding: 14px 16px;
   display: flex; flex-direction: column; justify-content: center; gap: 4px;
-  opacity: 0; transform: translateX(8px); pointer-events: none;
-  transition: opacity .3s ease, transform .3s ease;
+  opacity: 0; visibility: hidden; transform: translateX(8px); pointer-events: none;
+  transition: opacity .3s ease, transform .3s ease, visibility 0s linear .3s;
   background: linear-gradient(135deg, var(--accent-dim), transparent 75%);
+  user-select: none; -webkit-user-select: none;
 }
-.news-slide.active{ opacity: 1; transform: translateX(0); pointer-events: auto; }
+.news-slide.active{
+  opacity: 1; visibility: visible; transform: translateX(0); pointer-events: auto;
+  transition: opacity .3s ease, transform .3s ease, visibility 0s linear 0s;
+}
 .news-slide-tag{
   font-size: 9px; font-weight: 800; letter-spacing: .12em; color: var(--accent);
 }
 .news-slide-title{ font-size: 13.5px; font-weight: 700; color: var(--text); }
 .news-slide-sub{ font-size: 11px; color: var(--text2); }
+/* BUGFIX real (no era el fundido cruzado): esto tenía "position"
+   declarado DOS VECES (absolute, después pisado a relative) y un
+   "top: -18px" que lo tiraba para arriba — se terminaba dibujando
+   ENCIMA del texto de la slide de arriba, no debajo de ella. El punto
+   activo (pill celeste) se veía como un rectángulo azul atravesando
+   la palabra. Ahora es flujo normal, sin absolute ni offsets negativos. */
 .news-dots{
-  position: absolute; margin-top: -18px; margin-left: 16px;
-  display: flex; gap: 5px; position: relative; top: -18px; left: 0; padding-left: 0;
+  display: flex; gap: 5px; justify-content: center;
+  padding: 8px 0 0; margin: 0;
 }
 .news-dot{
   width: 5px; height: 5px; border-radius: 50%; background: rgba(255,255,255,.25);
@@ -150,10 +202,30 @@ html, body{
 }
 .news-tab.active{ color: var(--text); border-bottom-color: var(--accent); }
 
-.news-list{ list-style: none; margin: 0; padding: 8px 14px 14px; display: flex; flex-direction: column; gap: 7px; }
-.news-list li{ display: flex; justify-content: space-between; gap: 10px; font-size: 11px; }
-.news-list-text{ color: var(--text2); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.news-list{
+  list-style: none; margin: 0; padding: 6px 8px 14px; display: flex; flex-direction: column;
+  max-height: 190px; overflow-y: auto;
+}
+.news-list::-webkit-scrollbar{ width: 6px; }
+.news-list::-webkit-scrollbar-thumb{ background: rgba(255,255,255,.15); border-radius: 3px; }
+.news-list li{
+  display: flex; flex-direction: column; gap: 3px; font-size: 11px;
+  padding: 7px 6px; border-radius: 8px; cursor: pointer;
+  transition: background .12s ease;
+}
+.news-list li:hover{ background: rgba(255,255,255,.05); }
+.news-list-row{ display: flex; justify-content: space-between; gap: 10px; align-items: center; }
+.news-list-text{ color: var(--text2); }
 .news-list-date{ color: var(--text3); flex: none; }
+.news-list-chevron{
+  font-size: 9px; color: var(--text3); transition: transform .15s ease; flex: none;
+}
+.news-list li.open .news-list-chevron{ transform: rotate(90deg); color: var(--accent); }
+.news-list-detail{
+  display: none; font-size: 10.5px; color: var(--text3); line-height: 1.5;
+  padding: 2px 2px 0 0;
+}
+.news-list li.open .news-list-detail{ display: block; }
 
 /* ── accesos rápidos ── */
 .quicklinks{
@@ -209,6 +281,8 @@ html, body{
 }
 
 .actionbar-right{ display: flex; align-items: center; gap: 10px; }
+.btn-shortcut-group{ position: relative; }
+.shortcut-menu{ min-width: 210px; }
 .btn-shortcut{
   width: 40px; height: 40px; border-radius: 10px; border: 1px solid var(--border);
   background: rgba(255,255,255,.04); color: var(--text2); cursor: pointer;
@@ -247,9 +321,16 @@ html, body{
   transition: background .12s ease, border-color .12s ease;
 }
 .btn-more:hover{ background: rgba(255,255,255,.1); border-color: var(--accent); }
+/* BUGFIX visual: "bottom: 52px" ubicaba el menú relativo a la altura de
+   .btn-main-group (que es chica, la del botón) — con la ventana vieja,
+   más chica, el menú terminaba dibujándose fuera del área visible.
+   Anclado a "top" del propio grupo (que sí tiene una posición estable
+   dentro del flujo del footer) y con un margen fijo hacia arriba, el
+   menú siempre queda pegado justo arriba del botón, sin importar el
+   tamaño de la ventana. */
 .more-menu{
-  position: absolute; bottom: 52px; right: 0; z-index: 25;
-  display: flex; flex-direction: column; min-width: 240px;
+  position: absolute; bottom: 100%; margin-bottom: 10px; right: 0; z-index: 25;
+  display: flex; flex-direction: column; min-width: 250px;
   background: rgba(16,20,29,.97); border: 1px solid var(--border); border-radius: 12px;
   box-shadow: 0 14px 34px -10px rgba(0,0,0,.65); overflow: hidden;
   animation: menu-in .14s ease both;
@@ -295,3 +376,16 @@ html, body{
 }
 .settings-link:hover{ background: rgba(255,255,255,.12); }
 .settings-foot{ margin-top: 14px; font-size: 10.5px; color: var(--text3); text-align: center; }
+
+/* ── panel de detalle de novedad (ventana aparte, con scroll real) ── */
+.news-detail-panel{ width: 420px; max-height: 70vh; display: flex; flex-direction: column; }
+.news-detail-tag{
+  font-size: 10px; font-weight: 800; letter-spacing: .12em; color: var(--accent);
+}
+.news-detail-title{ margin: 4px 0 12px; font-size: 17px; font-weight: 700; color: var(--text); }
+.news-detail-body{
+  margin: 0; font-size: 13px; line-height: 1.7; color: var(--text2);
+  overflow-y: auto; padding-right: 4px;
+}
+.news-detail-body::-webkit-scrollbar{ width: 6px; }
+.news-detail-body::-webkit-scrollbar-thumb{ background: rgba(255,255,255,.15); border-radius: 3px; }

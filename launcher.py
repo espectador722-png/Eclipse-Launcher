@@ -67,6 +67,15 @@ def _state_file():
     return d / "launcher_state.json"
 
 
+def _start_menu_dir():
+    """Carpeta 'Programas' del Menú Inicio del usuario actual — ruta
+    estándar de Windows, sin admin."""
+    base = os.environ.get("APPDATA") or os.path.expanduser("~")
+    d = Path(base) / "Microsoft" / "Windows" / "Start Menu" / "Programs"
+    d.mkdir(parents=True, exist_ok=True)
+    return d
+
+
 def _load_state():
     try:
         return json.loads(_state_file().read_text(encoding="utf-8"))
@@ -223,9 +232,17 @@ class Api:
             "launcherVersion": LAUNCHER_VERSION,
         }
 
-    def check_and_install(self, choose_shortcut_dir=False, call_id=None):
+    def check_and_install(self, shortcut_mode="desktop", call_id=None):
         """Descarga (primera vez) o actualiza Eclipse Tools, en un hilo
-        de fondo — progreso se manda vía window.evaluate_js."""
+        de fondo — progreso se manda vía window.evaluate_js.
+
+        v1.0.1 — shortcut_mode reemplaza al viejo choose_shortcut_dir
+        (booleano): "desktop" (default) y "startmenu" resuelven la
+        carpeta ellos mismos, SIN ningún diálogo — "browse" es el único
+        caso que abre el selector nativo de Windows, como último
+        recurso para quien de verdad quiera otro lugar (pedido: el
+        selector nativo desentona con el resto del launcher, mejor
+        evitarlo salvo que haga falta de verdad)."""
         def emit(event, data):
             if not self._window:
                 return
@@ -302,10 +319,17 @@ class Api:
 
                 emit("status", {"msg": "Creando acceso directo…"})
                 shortcut_dir = None
-                if choose_shortcut_dir and self._window:
+                if shortcut_mode == "startmenu":
+                    shortcut_dir = _start_menu_dir()
+                elif shortcut_mode == "browse" and self._window:
                     chosen = self._window.create_file_dialog(webview.FOLDER_DIALOG)
                     if chosen:
                         shortcut_dir = chosen[0]
+                    else:
+                        # el usuario canceló el diálogo — no crear nada
+                        # en vez de caer de nuevo al Escritorio sin avisar.
+                        emit("done", {"launched": False, "upToDate": False, "version": latest_v, "noShortcut": True})
+                        return
                 _create_desktop_shortcut(exe, dest_dir=shortcut_dir)
 
                 emit("done", {"launched": False, "upToDate": False, "version": latest_v})
@@ -364,14 +388,39 @@ class Api:
 
 
 def main():
+    # v1.0.2 — ver comentario grande junto a easy_drag más abajo: sin
+    # esto, CUALQUIER mousedown en toda la ventana arranca un arrastre
+    # (según webview/js/customize.js, easy_drag activa un listener
+    # global de mousedown sin filtrar por selector salvo que se pida
+    # DIRECT_TARGET_ONLY) — los botones del titlebar y de toda la app
+    # dejarían de poder clickearse bien. Con esto en True, el arrastre
+    # SOLO arranca si el mousedown cae justo en un elemento con la
+    # clase "pywebview-drag-region" (ver .titlebar-brand/.titlebar-spacer
+    # en index.html) — todo lo demás sigue siendo un click normal.
+    webview.settings['DRAG_REGION_DIRECT_TARGET_ONLY'] = True
+
     api = Api()
     window = webview.create_window(
         "Eclipse Launcher",
         os.path.join(_HERE, "web", "index.html"),
         js_api=api,
-        width=880, height=520,
-        resizable=False,
-        frameless=False,
+        width=1180, height=760, min_size=(980, 640),
+        resizable=True,
+        # v1.0.1 — BUGFIX visual: frameless=False dejaba el chrome NATIVO
+        # de Windows (con su propio minimizar/cerrar) ADEMÁS del propio
+        # que ya dibuja web/index.html (.titlebar) — dos barras de título
+        # apiladas, una encima de la otra. El launcher tiene su propio
+        # chrome hecho a mano así que el nativo tiene que ir frameless.
+        #
+        # v1.0.2 — BUGFIX: "no puedo mover la ventana". pywebview NO usa
+        # -webkit-app-region:drag (eso es cosa de Electron/CSS estándar,
+        # pywebview no lo implementa) — con frameless=True, el arrastre
+        # depende de easy_drag=True MÁS un elemento con la clase
+        # ".pywebview-drag-region" (ver webview/util.py,
+        # DRAG_REGION_SELECTOR). Tenía easy_drag=False a propósito por
+        # error de tipeo — quedó sin ninguna forma de mover la ventana.
+        frameless=True,
+        easy_drag=True,
         background_color="#0b0e14",
     )
     api.set_window(window)

@@ -1,41 +1,85 @@
-# Eclipse Launcher
+<div align="center">
 
-El Launcher oficial de **Eclipse Tools** — la herramienta para traducir
-tus visual novels (Ren'Py, RPG Maker, Godot y Unity) al español (y otros
-idiomas).
+# 🌙 Eclipse Launcher
 
-Este launcher no hace nada más que descargar, instalar y abrir Eclipse
-Tools. La traducción, la licencia y todo lo demás vive adentro de la
-app real — este programa es solo la puerta de entrada.
+**La puerta de entrada oficial a Eclipse Tools**
 
-## Descargar
+Descarga, instala y mantiene actualizado tu traductor de visual novels — sin fricción, sin vueltas.
 
-👉 **[Descargar Eclipse Launcher](../../releases/latest)** (Windows)
+[![Última versión](https://img.shields.io/github/v/release/espectador722-png/Eclipse-Launcher?label=%C3%BAltima%20versi%C3%B3n&style=for-the-badge&color=25D3EE&labelColor=0B0E14)](../../releases/latest)
+[![Descargas](https://img.shields.io/github/downloads/espectador722-png/Eclipse-Launcher/total?label=descargas&style=for-the-badge&color=25D3EE&labelColor=0B0E14)](../../releases/latest)
+[![Plataforma](https://img.shields.io/badge/plataforma-Windows-25D3EE?style=for-the-badge&labelColor=0B0E14)](../../releases/latest)
 
-## Cómo funciona
+<br>
 
-1. Abrís `Eclipse Launcher.exe`.
-2. Apretás **Descargar** — baja e instala la última versión de Eclipse
-   Tools automáticamente.
-3. Se crea un acceso directo en tu Escritorio (podés elegir otra
-   carpeta con el botón 📁).
-4. Las próximas veces, el mismo launcher te avisa si hay una
-   actualización y te deja abrir Eclipse Tools con **Jugar**.
+### 📥 [**Descargar Eclipse Launcher**](../../releases/latest)
 
-Eclipse Tools se instala en `%LOCALAPPDATA%\EclipseTools\App\` — no
-hace falta ser administrador ni tocar `Archivos de programa`.
+<sub>Windows 10/11 · gratis · sin cuenta</sub>
 
-## ¿Por qué un launcher aparte?
+</div>
 
-Para que la primera descarga sea lo más simple y confiable posible.
-Eclipse Tools en sí mismo se sigue actualizando solo desde adentro una
-vez instalado (`Buscar actualizaciones`, en Config) — este launcher es
-solo para la instalación inicial y como forma alternativa de mantenerlo
-al día.
-
-## Soporte
-
-Dudas, bugs o pedidos: [Discord de Eclipse Zone](#) · [correo](#)
+<br>
 
 ---
-© Eclipse Zone — Senpai1940. Todos los derechos reservados.
+
+## ¿Qué es esto?
+
+Eclipse Launcher **no traduce nada** — es un instalador/actualizador chiquito y aburrido a propósito.
+Su único trabajo es bajar la última versión de **[Eclipse Tools](https://www.eclipse1940zone.online/)**
+(el traductor real, con IA, para Ren'Py / RPG Maker / Godot / Unity), instalarla, y mantenerla al día
+sin que tengas que volver a bajar nada a mano.
+
+> 💡 Toda la traducción, la licencia y el resto de las funciones viven **adentro de Eclipse Tools**.
+> Este launcher es solo la puerta de entrada.
+
+<br>
+
+## ✨ Qué hace
+
+| | |
+|---|---|
+| ⬇️ **Instala solo** | Baja e instala Eclipse Tools con un click, verificando integridad (SHA-256) antes de tocar nada. |
+| 🔄 **Se mantiene al día** | La próxima vez que lo abras, revisa la versión instalada y te ofrece actualizar si hay algo nuevo. |
+| 🔗 **Acceso directo donde quieras** | Escritorio, Menú Inicio, o cualquier carpeta que elijas — sin diálogos raros de por medio. |
+| 🎵 **Radio integrada** | Reproductor de música flotante, la misma playlist que usamos en la web. |
+| 🪶 **Liviano** | Sin licencia, sin motores de traducción — nada de peso muerto, solo lo justo para instalar. |
+| 🖥️ **Sin admin** | Se instala en tu carpeta de usuario (`%LOCALAPPDATA%`) — nunca pide privilegios de administrador. |
+
+<br>
+
+## 🚀 Cómo funciona
+
+```
+1. Abrís Eclipse Launcher.exe
+2. Apretás "Descargar" — baja e instala Eclipse Tools solo
+3. Elegís dónde crear el acceso directo (Escritorio por default)
+4. Listo — "Jugar" abre Eclipse Tools cuando quieras
+```
+
+Eclipse Tools queda instalado en `%LOCALAPPDATA%\EclipseTools\App\`.
+
+<br>
+
+## 🤔 ¿Por qué un launcher aparte?
+
+Para que la primera descarga sea lo más simple y confiable posible — sin depender de un host de
+archivos genérico ni de que Windows dude del `.zip` que acabás de bajar. Eclipse Tools se sigue
+actualizando solo desde adentro una vez instalado (**Config → Buscar actualizaciones**); este
+launcher es la puerta de entrada inicial, y una forma alternativa de mantenerlo al día cuando quieras.
+
+<br>
+
+## 💬 Soporte
+
+¿Dudas, bugs o pedidos? Pasate por acá:
+
+[![Discord](https://img.shields.io/badge/Discord-Eclipse%20Zone-5865F2?style=for-the-badge&logo=discord&logoColor=white)](https://discord.gg/VmGaPZCFVt)
+[![Sitio web](https://img.shields.io/badge/Sitio%20web-eclipse1940zone.online-25D3EE?style=for-the-badge&logo=googlechrome&logoColor=white)](https://www.eclipse1940zone.online/)
+
+<br>
+
+---
+
+<div align="center">
+<sub>© Eclipse Zone — Senpai1940. Todos los derechos reservados.</sub>
+</div>
