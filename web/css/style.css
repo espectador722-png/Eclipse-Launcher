@@ -53,7 +53,9 @@ body{ border-radius: 12px; overflow: hidden; }
   border: 1px solid var(--border); border-radius: 999px;
   padding: 7px 16px 7px 7px; max-width: 240px;
   box-shadow: 0 10px 28px -10px rgba(0,0,0,.6);
+  cursor: grab; touch-action: none; user-select: none; -webkit-user-select: none;
 }
+.radio-widget.dragging{ cursor: grabbing; }
 .radio-widget button{
   width: 30px; height: 30px; border-radius: 50%; border: none; cursor: pointer;
   flex: none; display: flex; align-items: center; justify-content: center;
@@ -151,6 +153,33 @@ body{ border-radius: 12px; overflow: hidden; }
 .hero-sub{ margin: 0; font-size: 15px; line-height: 1.6; color: var(--text2); max-width: 420px; }
 
 /* ── tarjeta de novedades flotante ── */
+.stray-banner{
+  display: flex; align-items: center; gap: 10px;
+  max-width: 460px; padding: 10px 12px; margin-bottom: 12px;
+  background: rgba(255,107,107,.1); border: 1px solid rgba(255,107,107,.35);
+  border-radius: 12px; font-size: 12px; color: var(--text2);
+  animation: hero-in .4s cubic-bezier(.2,.8,.2,1) both;
+}
+.stray-banner-icon{ flex: none; font-size: 15px; }
+.stray-banner-text{ flex: 1; line-height: 1.5; }
+.stray-banner-text code{
+  background: rgba(255,255,255,.08); padding: 1px 5px; border-radius: 5px;
+  font-size: 11px; word-break: break-all;
+}
+.stray-banner-btn{
+  flex: none; padding: 6px 12px; border-radius: 8px; border: none; cursor: pointer;
+  background: var(--danger); color: #fff; font-size: 12px; font-weight: 600;
+  transition: filter .15s ease;
+}
+.stray-banner-btn:hover{ filter: brightness(1.1); }
+.stray-banner-dismiss{
+  flex: none; width: 22px; height: 22px; border-radius: 6px; border: none; cursor: pointer;
+  background: transparent; color: var(--text2); font-size: 12px;
+  transition: background .15s ease;
+}
+.stray-banner-dismiss:hover{ background: rgba(255,255,255,.08); color: var(--text); }
+.stray-banner[hidden]{ display: none; }
+
 .news-card{
   width: 380px; border-radius: 18px; overflow: hidden;
   background: rgba(12,15,22,.72); backdrop-filter: blur(10px);
@@ -199,6 +228,7 @@ body{ border-radius: 12px; overflow: hidden; }
   border: none; background: transparent; color: var(--text3);
   font-size: 11px; font-weight: 700; padding: 6px 10px 8px; cursor: pointer;
   border-bottom: 2px solid transparent;
+  transition: color .15s ease, border-color .15s ease;
 }
 .news-tab.active{ color: var(--text); border-bottom-color: var(--accent); }
 
@@ -211,9 +241,10 @@ body{ border-radius: 12px; overflow: hidden; }
 .news-list li{
   display: flex; flex-direction: column; gap: 3px; font-size: 11px;
   padding: 7px 6px; border-radius: 8px; cursor: pointer;
-  transition: background .12s ease;
+  transition: background .12s ease, transform .12s ease;
 }
-.news-list li:hover{ background: rgba(255,255,255,.05); }
+.news-list li:hover{ background: rgba(255,255,255,.05); transform: translateX(2px); }
+.news-list li:hover .news-list-chevron{ color: var(--accent); transform: translateX(1px); }
 .news-list-row{ display: flex; justify-content: space-between; gap: 10px; align-items: center; }
 .news-list-text{ color: var(--text2); }
 .news-list-date{ color: var(--text3); flex: none; }
@@ -320,6 +351,12 @@ body{ border-radius: 12px; overflow: hidden; }
 }
 .btn-main.busy .btn-main-icon{ animation: spin 1s linear infinite; display: inline-block; }
 @keyframes spin{ from{ transform: rotate(0deg); } to{ transform: rotate(360deg); } }
+.btn-main.done{ animation: btn-done-pulse .5s ease; }
+@keyframes btn-done-pulse{
+  0%{ box-shadow: 0 6px 22px -6px rgba(37,211,238,.65); }
+  40%{ box-shadow: 0 0 0 10px rgba(37,211,238,0), 0 6px 30px -4px rgba(37,211,238,.9); }
+  100%{ box-shadow: 0 6px 22px -6px rgba(37,211,238,.65); }
+}
 
 /* ── menú "más opciones" junto al botón principal ── */
 .btn-main-group{ position: relative; display: flex; align-items: center; gap: 8px; }
@@ -349,6 +386,9 @@ body{ border-radius: 12px; overflow: hidden; }
   padding: 11px 14px; font-size: 12px; cursor: pointer; transition: background .1s ease;
 }
 .more-menu button:hover{ background: rgba(255,255,255,.06); color: var(--text); }
+.more-menu[hidden]{ display: none; }
+.more-menu-danger{ border-top: 1px solid var(--border); color: var(--danger) !important; }
+.more-menu-danger:hover{ background: rgba(255,107,107,.12) !important; color: var(--danger) !important; }
 
 /* ── panel de configuración ── */
 .settings-overlay{
@@ -384,6 +424,7 @@ body{ border-radius: 12px; overflow: hidden; }
 }
 .settings-link:hover{ background: rgba(255,255,255,.12); }
 .settings-foot{ margin-top: 14px; font-size: 10.5px; color: var(--text3); text-align: center; }
+.modal-msg{ margin: 0; font-size: 12.5px; line-height: 1.6; color: var(--text2); }
 
 /* ── panel de detalle de novedad (ventana aparte, con scroll real) ── */
 .news-detail-panel{ width: 420px; max-height: 70vh; display: flex; flex-direction: column; }
@@ -397,3 +438,126 @@ body{ border-radius: 12px; overflow: hidden; }
 }
 .news-detail-body::-webkit-scrollbar{ width: 6px; }
 .news-detail-body::-webkit-scrollbar-thumb{ background: rgba(255,255,255,.15); border-radius: 3px; }
+
+/* ── Wiki/Info — panel de pantalla completa (estilo página de personaje
+   tipo HoYoPlay): sidebar de categorías + panel grande + tira de
+   miniaturas abajo. ── */
+.wiki-overlay{
+  position: fixed; inset: 0; z-index: 60;
+  background: rgba(5,7,11,.92); backdrop-filter: blur(6px);
+  display: flex; align-items: center; justify-content: center;
+}
+.wiki-overlay[hidden]{ display: none; }
+.wiki-panel{
+  position: relative; width: min(920px, 94vw); height: min(600px, 88vh);
+  background: var(--bg2); border: 1px solid var(--border); border-radius: 14px;
+  display: flex; overflow: hidden;
+  box-shadow: 0 30px 70px -20px rgba(0,0,0,.6);
+}
+.wiki-close{
+  position: absolute; top: 10px; right: 10px; z-index: 2;
+  width: 30px; height: 30px; border-radius: 8px; border: 1px solid var(--border);
+  background: rgba(0,0,0,.35); color: var(--text2); font-size: 13px; cursor: pointer;
+}
+.wiki-close:hover{ background: rgba(255,255,255,.1); color: var(--text); border-color: var(--accent); }
+
+.wiki-sidebar{
+  width: 190px; flex: 0 0 auto; background: rgba(0,0,0,.22);
+  border-right: 1px solid var(--border); padding: 44px 0 14px; overflow-y: auto;
+}
+.wiki-cat-label{
+  padding: 10px 16px 4px; font-size: 9.5px; font-weight: 800; letter-spacing: .12em;
+  color: var(--text3); text-transform: uppercase;
+}
+.wiki-sidebar-item{
+  display: flex; align-items: center; gap: 8px; width: 100%; padding: 9px 16px;
+  background: none; border: none; border-left: 2px solid transparent;
+  color: var(--text2); font-size: 12.5px; font-weight: 600; text-align: left; cursor: pointer;
+}
+.wiki-sidebar-item:hover{ color: var(--text); background: rgba(255,255,255,.04); }
+.wiki-sidebar-item.active{
+  color: var(--accent); border-left-color: var(--accent); background: var(--accent-dim);
+}
+
+.wiki-main{ flex: 1 1 auto; display: flex; flex-direction: column; min-width: 0; }
+.wiki-content{
+  flex: 1 1 auto; padding: 44px 34px 18px; overflow-y: auto;
+}
+.wiki-content::-webkit-scrollbar{ width: 6px; }
+.wiki-content::-webkit-scrollbar-thumb{ background: rgba(255,255,255,.15); border-radius: 3px; }
+
+.wiki-entry-tag{
+  display: inline-block; font-size: 10px; font-weight: 800; letter-spacing: .1em;
+  color: var(--accent); background: var(--accent-dim); border: 1px solid rgba(37,211,238,.35);
+  border-radius: 999px; padding: 3px 10px; margin-bottom: 10px;
+}
+.wiki-entry-title{ margin: 0 0 12px; font-size: 26px; font-weight: 800; color: var(--text); }
+.wiki-entry-body{ margin: 0 0 16px; font-size: 13.5px; line-height: 1.75; color: var(--text2); }
+.wiki-entry-formats{ display: flex; flex-wrap: wrap; gap: 6px; }
+.wiki-entry-formats span{
+  font-size: 10.5px; font-family: Consolas, monospace; color: var(--text3);
+  background: rgba(255,255,255,.05); border: 1px solid var(--border);
+  border-radius: 6px; padding: 3px 8px;
+}
+
+.wiki-strip{
+  flex: 0 0 auto; display: flex; gap: 8px; padding: 12px 34px 16px;
+  border-top: 1px solid var(--border); overflow-x: auto;
+}
+.wiki-strip[hidden]{ display: none; }
+.wiki-strip::-webkit-scrollbar{ height: 5px; }
+.wiki-strip::-webkit-scrollbar-thumb{ background: rgba(255,255,255,.15); border-radius: 3px; }
+.wiki-thumb{
+  flex: 0 0 auto; width: 66px; padding: 8px 4px; border-radius: 9px;
+  background: rgba(255,255,255,.04); border: 1px solid var(--border);
+  color: var(--text3); font-size: 10px; font-weight: 700; text-align: center; cursor: pointer;
+}
+.wiki-thumb-icon{ font-size: 18px; display: block; margin-bottom: 4px; }
+.wiki-thumb:hover{ border-color: var(--accent); color: var(--text2); }
+.wiki-thumb.active{ border-color: var(--accent); background: var(--accent-dim); color: var(--accent); }
+
+/* ── Novedades — grid destacado + tabs + lista + detalle (layout
+   especial dentro de la wiki, separado del genérico tarjeta+tira). ── */
+.wiki-news-crumb{
+  font-size: 11px; color: var(--text3); margin-bottom: 14px;
+}
+.wiki-news-crumb-link{ color: var(--accent); cursor: pointer; }
+.wiki-news-crumb-link:hover{ text-decoration: underline; }
+
+.wiki-news-featured{
+  display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin: 10px 0 16px;
+}
+.wiki-news-feat-card{
+  display: flex; flex-direction: column; align-items: flex-start; gap: 4px;
+  text-align: left; padding: 14px; border-radius: 10px; cursor: pointer;
+  background: rgba(255,255,255,.04); border: 1px solid var(--border);
+}
+.wiki-news-feat-card:hover{ border-color: var(--accent); background: rgba(255,255,255,.07); }
+.wiki-news-feat-icon{ font-size: 20px; }
+.wiki-news-feat-tag{
+  font-size: 9px; font-weight: 800; letter-spacing: .1em; color: var(--accent);
+}
+.wiki-news-feat-title{ font-size: 12.5px; font-weight: 700; color: var(--text); }
+.wiki-news-feat-sum{ font-size: 11px; color: var(--text3); line-height: 1.4; }
+
+.wiki-news-tabs{
+  display: flex; gap: 4px; margin-bottom: 6px; border-bottom: 1px solid var(--border);
+}
+.wiki-news-tab{
+  background: none; border: none; border-bottom: 2px solid transparent;
+  color: var(--text3); font-size: 12px; font-weight: 700; padding: 8px 4px; cursor: pointer;
+}
+.wiki-news-tab:hover{ color: var(--text2); }
+.wiki-news-tab.active{ color: var(--accent); border-bottom-color: var(--accent); }
+
+.wiki-news-list{ list-style: none; margin: 0; padding: 0; }
+.wiki-news-list li{
+  display: flex; align-items: center; gap: 12px; padding: 12px 4px;
+  border-bottom: 1px solid var(--border); cursor: pointer;
+}
+.wiki-news-list li:hover .wiki-news-list-title{ color: var(--accent); }
+.wiki-news-list-icon{ font-size: 17px; flex: 0 0 auto; }
+.wiki-news-list-text{ display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.wiki-news-list-title{ font-size: 12.5px; font-weight: 700; color: var(--text); }
+.wiki-news-list-sum{ font-size: 11px; color: var(--text3); }
+.wiki-news-list-chevron{ margin-left: auto; color: var(--text3); font-size: 15px; }

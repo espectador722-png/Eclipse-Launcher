@@ -1,6 +1,9 @@
 # Build output — se genera con BUILD_LAUNCHER_NUITKA.bat, nunca se versiona
 dist_launcher/
 
+# Generado en cada arranque por main() (cache-busting de CSS/JS) — ver launcher.py
+web/_index_generated.html
+
 # Token de publish_launcher.py — NUNCA subir esto
 .eclipse_release_token
 

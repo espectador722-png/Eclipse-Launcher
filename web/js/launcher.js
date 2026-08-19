@@ -47,7 +47,40 @@ async function refreshState() {
     badge.hidden = true;
     setMainButton("download", "Descargar");
   }
+  updateStrayBanner(st.strayInstallPath);
 }
+
+function updateStrayBanner(strayPath) {
+  const banner = document.getElementById("stray-banner");
+  if (!strayPath || banner.dataset.dismissed === strayPath) {
+    banner.hidden = true;
+    return;
+  }
+  document.getElementById("stray-banner-path").textContent = strayPath;
+  banner.hidden = false;
+}
+
+document.getElementById("stray-banner-dismiss").addEventListener("click", () => {
+  const banner = document.getElementById("stray-banner");
+  banner.dataset.dismissed = document.getElementById("stray-banner-path").textContent;
+  banner.hidden = true;
+});
+
+document.getElementById("stray-banner-delete").addEventListener("click", async () => {
+  const btn = document.getElementById("stray-banner-delete");
+  btn.disabled = true;
+  btn.textContent = "Borrando…";
+  try {
+    const res = await api().resolve_stray_install("delete");
+    if (!res.ok) {
+      setStatus(res.msg || "No se pudo borrar la instalación vieja.");
+    }
+  } finally {
+    btn.disabled = false;
+    btn.textContent = "Borrar copia vieja";
+    await refreshState();
+  }
+});
 
 function setStatus(msg) {
   const el = document.getElementById("dock-status");
@@ -95,6 +128,8 @@ window.onLauncherEvent = function (event, data) {
       setStatus("✓ Ya tenés la última versión.");
     } else {
       setStatus(`✓ Instalado v${data.version || ""} — acceso directo creado.`);
+      btn.classList.add("done");
+      setTimeout(() => btn.classList.remove("done"), 550);
     }
     refreshState();
   }
@@ -120,11 +155,22 @@ document.getElementById("btn-main").addEventListener("click", async () => {
 // ── menú de "dónde crear el acceso directo" — reemplaza al diálogo
 // nativo de Windows como camino por defecto (ver comentario grande en
 // index.html / launcher.py). ──
+// BUGFIX reportado: los dos popups (este y #more-menu) usaban cada uno su
+// propio stopPropagation() + listener de documento — al abrir uno estando
+// el otro abierto, cada stopPropagation bloqueaba el cierre del otro y
+// quedaban los dos superpuestos en pantalla sin cerrarse nunca al clickear
+// afuera. closeAllPopups() centraliza el cierre de ambos.
+function closeAllPopups() {
+  document.getElementById("shortcut-menu").hidden = true;
+  document.getElementById("more-menu").hidden = true;
+}
 document.getElementById("btn-shortcut").addEventListener("click", (e) => {
   e.stopPropagation();
-  document.getElementById("shortcut-menu").hidden = !document.getElementById("shortcut-menu").hidden;
+  const willOpen = document.getElementById("shortcut-menu").hidden;
+  closeAllPopups();
+  document.getElementById("shortcut-menu").hidden = !willOpen;
 });
-document.addEventListener("click", () => { document.getElementById("shortcut-menu").hidden = true; });
+document.addEventListener("click", closeAllPopups);
 document.querySelectorAll("#shortcut-menu [data-shortcut]").forEach((btn) => {
   btn.addEventListener("click", async () => {
     document.getElementById("shortcut-menu").hidden = true;
@@ -167,6 +213,11 @@ document.querySelectorAll("#shortcut-menu [data-shortcut]").forEach((btn) => {
   }
 
   setInterval(() => show((idx + 1) % slides.length), 4200);
+
+  slides.forEach((slide) => {
+    slide.style.cursor = "pointer";
+    slide.addEventListener("click", () => openWikiNewsByTitle(slide.querySelector(".news-slide-title").textContent));
+  });
 })();
 
 // ── tabs de la tarjeta de novedades ──────────────────────────────────
@@ -232,21 +283,23 @@ function renderNewsTab(tabId) {
   });
 }
 
+// El detalle ya no abre el mini-modal viejo (#news-detail-overlay) — ahora
+// lleva directo a la ficha completa dentro del panel Wiki, categoría
+// "Novedades", buscando la entrada equivalente en WIKI_NEWS por título
+// (los textos se mantienen sincronizados a mano entre ambos arrays).
 function openNewsDetail(tabId, i) {
-  const [text, date, detail] = (NEWS_TAB_CONTENT[tabId] || [])[i] || [];
+  const [text] = (NEWS_TAB_CONTENT[tabId] || [])[i] || [];
   if (!text) return;
-  document.getElementById("news-detail-tag").textContent =
-    tabId === "noticias" ? "NOTICIA" : tabId === "info" ? "INFORMACIÓN" : "EVENTO";
-  document.getElementById("news-detail-title").textContent = text;
-  document.getElementById("news-detail-body").textContent = detail || text;
-  document.getElementById("news-detail-overlay").hidden = false;
+  openWikiNewsByTitle(text);
 }
-document.getElementById("news-detail-close").addEventListener("click", () => {
-  document.getElementById("news-detail-overlay").hidden = true;
-});
-document.getElementById("news-detail-overlay").addEventListener("click", (e) => {
-  if (e.target.id === "news-detail-overlay") document.getElementById("news-detail-overlay").hidden = true;
-});
+function openWikiNewsByTitle(title) {
+  const idx = WIKI_NEWS.findIndex((n) => n.title === title);
+  openWiki();
+  wikiActiveCat = "novedades";
+  renderWikiSidebar();
+  wikiNewsDetail = idx >= 0 ? idx : null;
+  renderWikiNews();
+}
 document.querySelectorAll(".news-tab").forEach((tab) => {
   tab.addEventListener("click", () => {
     document.querySelectorAll(".news-tab").forEach((t) => t.classList.remove("active"));
@@ -259,9 +312,10 @@ renderNewsTab("eventos");
 // ── menú "más opciones" (☰) junto al botón principal ─────────────────
 document.getElementById("btn-more").addEventListener("click", (e) => {
   e.stopPropagation();
-  document.getElementById("more-menu").hidden = !document.getElementById("more-menu").hidden;
+  const willOpen = document.getElementById("more-menu").hidden;
+  closeAllPopups();
+  document.getElementById("more-menu").hidden = !willOpen;
 });
-document.addEventListener("click", () => { document.getElementById("more-menu").hidden = true; });
 document.querySelectorAll("#more-menu [data-action]").forEach((btn) => {
   btn.addEventListener("click", async () => {
     document.getElementById("more-menu").hidden = true;
@@ -277,8 +331,35 @@ document.querySelectorAll("#more-menu [data-action]").forEach((btn) => {
       api().open_install_folder();
     } else if (action === "shortcut") {
       document.getElementById("shortcut-menu").hidden = false;
+    } else if (action === "uninstall-tools") {
+      document.getElementById("uninstall-confirm-overlay").hidden = false;
     }
   });
+});
+
+// ── confirmación de "Desinstalar Eclipse Tools" ───────────────────────
+function closeUninstallConfirm() {
+  document.getElementById("uninstall-confirm-overlay").hidden = true;
+}
+document.getElementById("uninstall-confirm-close").addEventListener("click", closeUninstallConfirm);
+document.getElementById("uninstall-confirm-cancel").addEventListener("click", closeUninstallConfirm);
+document.getElementById("uninstall-confirm-overlay").addEventListener("click", (e) => {
+  if (e.target.id === "uninstall-confirm-overlay") closeUninstallConfirm();
+});
+document.getElementById("uninstall-confirm-yes").addEventListener("click", async () => {
+  const btn = document.getElementById("uninstall-confirm-yes");
+  btn.disabled = true;
+  btn.textContent = "Desinstalando…";
+  const res = await api().uninstall_tools();
+  closeUninstallConfirm();
+  btn.disabled = false;
+  btn.textContent = "Desinstalar";
+  if (res && res.ok) {
+    setStatus("✓ Eclipse Tools desinstalado.");
+    refreshState();
+  } else {
+    setStatus(`✗ ${(res && res.msg) || "No se pudo desinstalar."}`);
+  }
 });
 
 // ── panel de configuración ────────────────────────────────────────────
@@ -307,6 +388,13 @@ document.getElementById("settings-overlay").addEventListener("click", (e) => {
 document.getElementById("settings-open-folder").addEventListener("click", () => {
   api().open_install_folder();
 });
+document.getElementById("settings-create-launcher-shortcut").addEventListener("click", async (e) => {
+  const btn = e.currentTarget;
+  const original = btn.textContent;
+  const res = await api().create_launcher_shortcut();
+  btn.textContent = res && res.ok ? "✓ Creado" : "✗ Error";
+  setTimeout(() => { btn.textContent = original; }, 2000);
+});
 
 // ── rail de apps (hoy solo Eclipse Tools) ─────────────────────────────
 document.querySelectorAll(".app-rail-item:not(.app-rail-empty)").forEach((btn) => {
@@ -314,11 +402,15 @@ document.querySelectorAll(".app-rail-item:not(.app-rail-empty)").forEach((btn) =
 });
 
 // ── links externos (social rail + accesos rápidos) ───────────────────
+// "report" apunta al canal de bugs de Discord — si el que clickea ya es
+// miembro del server, el enlace de invite lo redirige directo a ese canal;
+// si no lo es, primero lo hace unirse y desde ahí puede navegar al canal.
+const DISCORD_BUG_CHANNEL_ID = "1313170797095026748";
 const EXTERNAL_LINKS = {
-  discord: "https://discord.gg/",
+  discord: "https://discord.gg/VmGaPZCFVt",
   docs: "https://www.eclipse1940zone.online/",
   web: "https://www.eclipse1940zone.online/",
-  report: "https://discord.gg/",
+  report: `https://discord.com/channels/943926654655430756/${DISCORD_BUG_CHANNEL_ID}`,
 };
 document.querySelectorAll("[data-link]").forEach((el) => {
   if (el.id === "quicklink-folder") return; // ese abre la carpeta local, no un link
@@ -332,12 +424,332 @@ document.getElementById("quicklink-folder").addEventListener("click", () => {
   api().open_install_folder();
 });
 
+// ── Wiki/Info — panel de pantalla completa estilo "página de personaje"
+// (sidebar de categorías + panel grande + tira de miniaturas). Todas las
+// entradas están agrupadas por categoría; cada categoría tiene su propia
+// tira de miniaturas abajo, igual que Mondstadt/Liyue/etc. en Genshin. ──
+// Novedades — layout especial tipo página "News" de Genshin: grid de
+// destacadas arriba, tabs (Últimas/Info/Actualizaciones/Eventos), lista
+// debajo, y detalle con breadcrumb al hacer clic. "featured:true" define
+// cuáles entran al grid de arriba (máx. 3 se muestran).
+const WIKI_NEWS = [
+  {
+    tab: "ultimas", tag: "MEJORA", featured: true, icon: "🔄",
+    title: "Motor Multi-Engine renovado", date: "",
+    summary: "Google + Yandex + MyMemory en cascada, más rápido y confiable.",
+    body: "El sistema que traduce el texto ahora combina Google, Yandex y MyMemory en cascada: si uno falla o tarda, prueba el siguiente automáticamente. Resultado: traducciones más rápidas y confiables que antes.",
+  },
+  {
+    tab: "ultimas", tag: "MEJORA", featured: true, icon: "🗂️",
+    title: "Interfaz reorganizada", date: "",
+    summary: "Secciones plegables en Ren'Py, RPG Maker y Configuración.",
+    body: "Ren'Py, RPG Maker y Configuración ya no son una lista larga de tarjetas — ahora están agrupadas en secciones plegables, más fácil de navegar.",
+  },
+  {
+    tab: "ultimas", tag: "FIX", featured: true, icon: "🩹",
+    title: "Nombres compuestos arreglados", date: "",
+    summary: "\"Uncle Pete\" y similares ya traducen bien.",
+    body: "Casos tipo \"Uncle Pete\" (título + nombre propio pegados) ahora traducen bien el título y respetan el nombre propio sin traducirlo por error.",
+  },
+  {
+    tab: "actualizaciones", tag: "FIX", icon: "🔧",
+    title: "Actualizaciones más confiables", date: "",
+    summary: "El instalador de actualizaciones quedó más robusto.",
+    body: "El sistema que instala las actualizaciones automáticas quedó más robusto ante casos raros del lado del usuario (conexión cortada, permisos, etc.).",
+  },
+  {
+    tab: "info", tag: "INFO", icon: "🎮",
+    title: "Motores de juego soportados", date: "",
+    summary: "Ren'Py, RPG Maker (MV/MZ/XP/VX/Ace), Godot y Unity.",
+    body: "Eclipse Tools traduce juegos hechos en Ren'Py, RPG Maker (MV/MZ/XP/VX/Ace), Godot y Unity (incluyendo IL2CPP), además de juegos Tyrano/Electron empaquetados en .asar. Mirá la categoría \"Motores\" del menú para el detalle de cada uno.",
+  },
+  {
+    tab: "info", tag: "INFO", icon: "🧠",
+    title: "Motores de traducción", date: "",
+    summary: "Online (Google, Yandex, MyMemory) o local/offline (Argos).",
+    body: "Podés traducir usando servicios online (Google, Yandex, MyMemory) o de forma local/offline con Argos, sin depender de internet. Vos elegís según prioricés velocidad, calidad o privacidad.",
+  },
+  {
+    tab: "info", tag: "INFO", icon: "🆓",
+    title: "Gratis para empezar", date: "",
+    summary: "Todo lo esencial funciona sin licencia.",
+    body: "Todo lo esencial de Eclipse Tools funciona sin licencia — la versión paga solo agrega el traductor OCR (texto dentro de imágenes) y los motores de traducción por IA (LLM).",
+  },
+  {
+    tab: "eventos", tag: "EVENTO", icon: "🎉",
+    title: "Sin eventos por ahora", date: "",
+    summary: "Seguí el Discord para enterarte apenas haya novedades.",
+    body: "Seguí el Discord para enterarte apenas haya sorteos, betas o novedades antes que nadie.",
+  },
+  {
+    tab: "eventos", tag: "EVENTO", icon: "💡",
+    title: "¿Tenés una idea o pedido?", date: "",
+    summary: "Contanos en Discord — la mayoría de las funciones nuevas salieron de ahí.",
+    body: "Contanos en el servidor de Discord — la mayoría de las funciones nuevas salieron de pedidos de la comunidad.",
+  },
+];
+const WIKI_NEWS_TABS = [
+  { id: "ultimas", label: "Últimas" },
+  { id: "info", label: "Info" },
+  { id: "actualizaciones", label: "Actualizaciones" },
+  { id: "eventos", label: "Eventos" },
+];
+let wikiNewsTab = "ultimas";
+let wikiNewsDetail = null;
+
+const WIKI_CATEGORIES = [
+  {
+    id: "motores", label: "Motores", icon: "🎮",
+    entries: [
+      {
+        icon: "📗", title: "Ren'Py",
+        body: "El motor más usado para novelas visuales. Eclipse Tools abre el juego (esté con el código a la vista o compilado y comprimido), saca todo el texto de diálogos y menús, lo traduce y lo vuelve a meter adentro para que el juego funcione igual que antes, pero en tu idioma.",
+        formats: [".rpy", ".rpyc", ".rpa"],
+      },
+      {
+        icon: "🗡️", title: "RPG Maker MV / MZ / VX Ace",
+        body: "Motor clásico de JRPGs indie. Traduce diálogos de eventos, nombres de objetos/habilidades/personajes y hasta texto agregado por plugins de terceros. VX Ace usa un formato de archivo más viejo que MV/MZ, pero Eclipse Tools reconoce automáticamente cuál es tu juego: vos solo elegís la carpeta.",
+        formats: ["data/*.json", ".rvdata2", "events"],
+      },
+      {
+        icon: "⚙️", title: "Unity (IL2CPP)",
+        body: "Muchos juegos de Unity están compilados con una tecnología (IL2CPP) que esconde el texto de forma más difícil de leer que un Unity normal, y por eso antes no se podían traducir. Eclipse Tools sabe leer ese formato especial y reemplaza el texto sin romper el juego.",
+        formats: ["global-metadata.dat", "il2cpp"],
+      },
+      {
+        icon: "📦", title: "Tyrano / Electron",
+        body: "Juegos hechos con TyranoScript y empaquetados como programa de escritorio (Electron, la misma tecnología detrás de Discord). Todo el juego queda comprimido en un solo archivo; Eclipse Tools lo abre, traduce el texto de adentro y lo vuelve a armar, guardando siempre una copia de seguridad por si algo sale mal.",
+        formats: ["app.asar"],
+      },
+      {
+        icon: "🐦", title: "Godot",
+        body: "Motor libre y gratuito, cada vez más popular entre desarrolladores indie. Eclipse Tools localiza los diálogos y recursos de texto del proyecto exportado y los traduce manteniendo la estructura original del juego.",
+        formats: [".pck", ".tscn"],
+      },
+      {
+        icon: "✨", title: "Y más motores",
+        body: "¿Tu juego usa un motor que no está en esta lista? El equipo sigue agregando soporte para nuevos motores con cada actualización de Eclipse Tools — escribinos por Discord si querés pedir uno.",
+        formats: ["actualizaciones constantes"],
+      },
+    ],
+  },
+  { id: "novedades", label: "Novedades", icon: "🆕", special: "news" },
+  {
+    id: "guia", label: "Cómo usar", icon: "📘",
+    entries: [
+      {
+        icon: "1️⃣", title: "Instalá Eclipse Tools",
+        body: "Desde este mismo Launcher, tocá el botón grande \"Descargar\". Se instala solo, sin pasos extra — y a partir de ahí el Launcher se encarga de mantenerlo actualizado.",
+      },
+      {
+        icon: "2️⃣", title: "Abrí tu juego",
+        body: "Dentro de Eclipse Tools, seleccioná la carpeta del juego que querés traducir. El programa detecta automáticamente qué motor usa (Ren'Py, RPG Maker, Unity, etc.) y te muestra las opciones correspondientes.",
+      },
+      {
+        icon: "3️⃣", title: "Elegí tu motor de traducción",
+        body: "Podés traducir online (Google, Yandex, MyMemory) o local/offline con Argos, sin depender de internet. La calidad y velocidad varían según cuál elijas.",
+      },
+      {
+        icon: "4️⃣", title: "Traducí y jugá",
+        body: "Eclipse Tools extrae el texto, lo traduce y lo reinyecta en el juego manteniendo todo lo demás intacto (imágenes, sonidos, guardado). Cuando termina, el juego ya está listo para jugarse en tu idioma.",
+      },
+    ],
+  },
+  {
+    id: "comunidad", label: "Comunidad", icon: "💬",
+    entries: [
+      {
+        icon: "💬", title: "Discord",
+        body: "Reportá bugs, pedí soporte, sugerí motores nuevos o simplemente charlá con otros usuarios que también traducen juegos.",
+        link: "discord",
+      },
+      {
+        icon: "🌐", title: "Eclipse Hub",
+        body: "La versión web del proyecto — funciona en cualquier navegador de PC o celular, sin instalar nada, con cuentas sincronizadas, comunidad y contenido exclusivo de Patreon.",
+        link: "web",
+      },
+      {
+        icon: "📘", title: "Documentación",
+        body: "Guías más detalladas sobre cada función de Eclipse Tools, para cuando necesités algo más específico que esta introducción rápida.",
+        link: "docs",
+      },
+    ],
+  },
+];
+
+let wikiActiveCat = WIKI_CATEGORIES[0].id;
+let wikiActiveIdx = 0;
+
+function wikiCategory(id) {
+  return WIKI_CATEGORIES.find((c) => c.id === id) || WIKI_CATEGORIES[0];
+}
+
+function renderWikiSidebar() {
+  const sidebar = document.getElementById("wiki-sidebar");
+  sidebar.innerHTML = WIKI_CATEGORIES.map((cat) => `
+    <button class="wiki-sidebar-item${cat.id === wikiActiveCat ? " active" : ""}" data-cat="${cat.id}">
+      <span>${cat.icon}</span><span>${cat.label}</span>
+    </button>`
+  ).join("");
+  sidebar.querySelectorAll("[data-cat]").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      wikiActiveCat = btn.dataset.cat;
+      wikiActiveIdx = 0;
+      wikiNewsDetail = null;
+      renderWikiSidebar();
+      renderWikiBody();
+    });
+  });
+}
+
+function renderWikiBody() {
+  const cat = wikiCategory(wikiActiveCat);
+  if (cat.special === "news") {
+    document.getElementById("wiki-strip").hidden = true;
+    renderWikiNews();
+  } else {
+    document.getElementById("wiki-strip").hidden = false;
+    renderWikiEntry();
+    renderWikiStrip();
+  }
+}
+
+function renderWikiEntry() {
+  const cat = wikiCategory(wikiActiveCat);
+  const entry = cat.entries[wikiActiveIdx] || cat.entries[0];
+  const content = document.getElementById("wiki-content");
+  content.innerHTML = `
+    <span class="wiki-entry-tag">${cat.label.toUpperCase()}</span>
+    <h2 class="wiki-entry-title">${entry.icon} ${entry.title}</h2>
+    <p class="wiki-entry-body">${entry.body}</p>
+    ${entry.formats ? `<div class="wiki-entry-formats">${entry.formats.map((f) => `<span>${f}</span>`).join("")}</div>` : ""}
+  `;
+  if (entry.link) {
+    const linkBtn = document.createElement("button");
+    linkBtn.className = "settings-link";
+    linkBtn.style.marginTop = "14px";
+    linkBtn.textContent = "Abrir →";
+    linkBtn.addEventListener("click", () => {
+      const url = EXTERNAL_LINKS[entry.link];
+      if (url) api().open_link(url);
+    });
+    content.appendChild(linkBtn);
+  }
+}
+
+function renderWikiStrip() {
+  const cat = wikiCategory(wikiActiveCat);
+  const strip = document.getElementById("wiki-strip");
+  strip.innerHTML = cat.entries.map((entry, i) => `
+    <button class="wiki-thumb${i === wikiActiveIdx ? " active" : ""}" data-idx="${i}">
+      <span class="wiki-thumb-icon">${entry.icon}</span><span>${entry.title}</span>
+    </button>`
+  ).join("");
+  strip.querySelectorAll("[data-idx]").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      wikiActiveIdx = Number(btn.dataset.idx);
+      renderWikiEntry();
+      renderWikiStrip();
+    });
+  });
+}
+
+// ── Novedades — layout especial (grid destacado + tabs + lista + detalle
+// con breadcrumb), separado del layout genérico de tarjeta/tira. ──
+function renderWikiNews() {
+  const content = document.getElementById("wiki-content");
+  if (wikiNewsDetail !== null) {
+    const item = WIKI_NEWS[wikiNewsDetail];
+    content.innerHTML = `
+      <div class="wiki-news-crumb">
+        <span class="wiki-news-crumb-link" id="wiki-news-back">🆕 Novedades</span>
+        <span> › </span><span>${item.title}</span>
+      </div>
+      <span class="wiki-entry-tag">${item.tag}</span>
+      <h2 class="wiki-entry-title">${item.icon} ${item.title}</h2>
+      <p class="wiki-entry-body">${item.body}</p>
+    `;
+    document.getElementById("wiki-news-back").addEventListener("click", () => {
+      wikiNewsDetail = null;
+      renderWikiNews();
+    });
+    return;
+  }
+
+  const featured = WIKI_NEWS.filter((n) => n.featured).slice(0, 3);
+  const items = WIKI_NEWS.filter((n) => n.tab === wikiNewsTab);
+
+  content.innerHTML = `
+    <span class="wiki-entry-tag">NOVEDADES</span>
+    <div class="wiki-news-featured">
+      ${featured.map((n) => `
+        <button class="wiki-news-feat-card" data-news="${WIKI_NEWS.indexOf(n)}">
+          <span class="wiki-news-feat-icon">${n.icon}</span>
+          <span class="wiki-news-feat-tag">${n.tag}</span>
+          <span class="wiki-news-feat-title">${n.title}</span>
+          <span class="wiki-news-feat-sum">${n.summary}</span>
+        </button>`
+      ).join("")}
+    </div>
+    <div class="wiki-news-tabs">
+      ${WIKI_NEWS_TABS.map((t) => `
+        <button class="wiki-news-tab${t.id === wikiNewsTab ? " active" : ""}" data-tab="${t.id}">${t.label}</button>`
+      ).join("")}
+    </div>
+    <ul class="wiki-news-list">
+      ${items.map((n) => `
+        <li data-news="${WIKI_NEWS.indexOf(n)}">
+          <span class="wiki-news-list-icon">${n.icon}</span>
+          <div class="wiki-news-list-text">
+            <span class="wiki-news-list-title">${n.title}</span>
+            <span class="wiki-news-list-sum">${n.summary}</span>
+          </div>
+          <span class="wiki-news-list-chevron">›</span>
+        </li>`
+      ).join("")}
+    </ul>
+  `;
+
+  content.querySelectorAll("[data-news]").forEach((el) => {
+    el.addEventListener("click", () => {
+      wikiNewsDetail = Number(el.dataset.news);
+      renderWikiNews();
+    });
+  });
+  content.querySelectorAll(".wiki-news-tab").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      wikiNewsTab = btn.dataset.tab;
+      renderWikiNews();
+    });
+  });
+}
+
+function openWiki() {
+  wikiActiveCat = WIKI_CATEGORIES[0].id;
+  wikiActiveIdx = 0;
+  wikiNewsTab = "ultimas";
+  wikiNewsDetail = null;
+  renderWikiSidebar();
+  renderWikiBody();
+  document.getElementById("wiki-overlay").hidden = false;
+}
+function closeWiki() {
+  document.getElementById("wiki-overlay").hidden = true;
+}
+document.getElementById("btn-wiki").addEventListener("click", openWiki);
+document.getElementById("wiki-close").addEventListener("click", closeWiki);
+document.getElementById("wiki-overlay").addEventListener("click", (e) => {
+  if (e.target.id === "wiki-overlay") closeWiki();
+});
+
 document.getElementById("btn-min").addEventListener("click", () => {
-  window.pywebview.api;
-  try { pywebview.window ? pywebview.window.minimize() : null; } catch (_) {}
+  // BUGFIX reportado: "pywebview.window" no existe — pywebview solo expone
+  // como window.pywebview.api.* los métodos pasados como js_api (ver Api en
+  // launcher.py). minimize_window()/close_window() son el bridge real.
+  api().minimize_window();
 });
 document.getElementById("btn-close").addEventListener("click", () => {
-  window.close();
+  api().close_window();
 });
 
 // ── fondo de partículas — mismo lenguaje visual que Eclipse Tools,
@@ -391,6 +803,76 @@ const EZ_RADIO_TRACKS = [
   { name: "NUNCA MUDA (Slowed 0.66X) - Scytherman, NXGHT!", url: "https://github.com/espectador722-png/suncsjcsn/raw/refs/heads/main/%F0%9D%90%8D%F0%9D%90%94%F0%9D%90%8D%F0%9D%90%82%F0%9D%90%80%20%F0%9D%90%8C%F0%9D%90%94%F0%9D%90%83%F0%9D%90%80_%20(%F0%9D%90%92%F0%9D%90%A5%F0%9D%90%A8%F0%9D%90%B0%F0%9D%90%9E%F0%9D%90%9D%200.66%F0%9D%90%97)%20-%20%F0%9D%90%92%F0%9D%90%9C%F0%9D%90%B2%F0%9D%90%AD%F0%9D%90%A1%F0%9D%90%9E%F0%9D%90%AB%F0%9D%90%A6%F0%9D%90%9A%F0%9D%90%A7%F0%9D%90%9E%2C%20%F0%9D%90%8D%F0%9D%90%97%F0%9D%90%86%F0%9D%90%87%F0%9D%90%93!%20%20%5B%20%F0%9D%91%AD%F0%9D%92%93%F0%9D%92%82%F0%9D%92%8F%F0%9D%92%84%F0%9D%92%86%F0%9D%92%94%F0%9D%92%84%F0%9D%92%82%20%F0%9D%91%B7%F0%9D%92%93%F0%9D%92%86%F0%9D%92%8D%F0%9D%92%82%F0%9D%92%95%F0%9D%92%8A%20%F0%9D%91%AC%F0%9D%92%85%F0%9D%92%8A%F0%9D%92%95%20%5D.mp3" },
 ];
 
+// Arrastrar el reproductor flotante — mismo mecanismo que Eclipse Tools
+// (ver wireRadioWidgetDrag en EclipseTools/web/js/app.js): antes quedaba
+// siempre fijo en left:20px/bottom:90px, se arrastra desde cualquier
+// punto que no sea un botón (play/next siguen siendo clicks normales) y
+// la posición elegida se guarda en localStorage para la próxima vez.
+const RADIO_POS_KEY = "eclipseLauncherRadioPos";
+
+function wireRadioWidgetDrag(widget) {
+  let dragging = false;
+  let startX = 0, startY = 0;
+  let originLeft = 0, originTop = 0;
+
+  function applyPosition(left, top) {
+    const w = widget.offsetWidth, h = widget.offsetHeight;
+    const maxLeft = Math.max(0, window.innerWidth - w);
+    const maxTop = Math.max(0, window.innerHeight - h);
+    left = Math.min(Math.max(0, left), maxLeft);
+    top = Math.min(Math.max(0, top), maxTop);
+    widget.style.left = `${left}px`;
+    widget.style.top = `${top}px`;
+    widget.style.right = "auto";
+    widget.style.bottom = "auto";
+    return { left, top };
+  }
+
+  try {
+    const saved = JSON.parse(localStorage.getItem(RADIO_POS_KEY) || "null");
+    if (saved && typeof saved.left === "number" && typeof saved.top === "number") {
+      applyPosition(saved.left, saved.top);
+    }
+  } catch (_) { /* localStorage corrupto o vacío: se queda con el CSS */ }
+
+  function onPointerDown(e) {
+    if (e.target.closest("button")) return;
+    dragging = true;
+    widget.classList.add("dragging");
+    widget.setPointerCapture(e.pointerId);
+    const rect = widget.getBoundingClientRect();
+    originLeft = rect.left;
+    originTop = rect.top;
+    startX = e.clientX;
+    startY = e.clientY;
+  }
+
+  function onPointerMove(e) {
+    if (!dragging) return;
+    const dx = e.clientX - startX;
+    const dy = e.clientY - startY;
+    applyPosition(originLeft + dx, originTop + dy);
+  }
+
+  function onPointerUp(e) {
+    if (!dragging) return;
+    dragging = false;
+    widget.classList.remove("dragging");
+    try { widget.releasePointerCapture(e.pointerId); } catch (_) { /* ya liberado */ }
+    const rect = widget.getBoundingClientRect();
+    localStorage.setItem(RADIO_POS_KEY, JSON.stringify({ left: rect.left, top: rect.top }));
+  }
+
+  widget.addEventListener("pointerdown", onPointerDown);
+  window.addEventListener("pointermove", onPointerMove);
+  window.addEventListener("pointerup", onPointerUp);
+
+  window.addEventListener("resize", () => {
+    const rect = widget.getBoundingClientRect();
+    applyPosition(rect.left, rect.top);
+  });
+}
+
 (function initRadio() {
   const audio = document.getElementById("bg-audio");
   const widget = document.getElementById("radio-widget");
@@ -412,7 +894,10 @@ const EZ_RADIO_TRACKS = [
     if (autoplay) audio.play().catch(() => {});
   }
 
-  if (widget) widget.style.display = "flex";
+  if (widget) {
+    widget.style.display = "flex";
+    wireRadioWidgetDrag(widget);
+  }
   loadTrack(0, false);
 
   function tryPlay() {

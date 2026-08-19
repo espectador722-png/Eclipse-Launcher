@@ -56,8 +56,8 @@ py -3.11 -m nuitka ^
   --windows-icon-from-ico=eclipse.ico ^
   --company-name="Eclipse Zone" ^
   --product-name="Eclipse Launcher" ^
-  --file-version=1.0.0.0 ^
-  --product-version=1.0.0.0 ^
+  --file-version=1.0.1.0 ^
+  --product-version=1.0.1.0 ^
   --output-dir=dist_launcher ^
   --include-data-dir=web=web ^
   --output-filename="Eclipse Launcher.exe" ^

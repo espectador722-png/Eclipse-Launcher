@@ -45,7 +45,7 @@ import webview
 
 APP_NAME = "EclipseTools"
 LICENSE_API_BASE = "https://eclipse-license.espectador722.workers.dev"
-LAUNCHER_VERSION = "1.0.1"
+LAUNCHER_VERSION = "1.0.2"
 
 _HERE = os.path.dirname(os.path.abspath(__file__))
 
@@ -124,6 +124,156 @@ def _set_startup_enabled(enabled):
         pass
 
 
+_UNINSTALL_REG_PATH = r"Software\Microsoft\Windows\CurrentVersion\Uninstall\EclipseLauncher"
+
+
+def _folder_size_kb(path):
+    total = 0
+    try:
+        for p in Path(path).rglob("*"):
+            if p.is_file():
+                try:
+                    total += p.stat().st_size
+                except Exception:
+                    pass
+    except Exception:
+        pass
+    return total // 1024
+
+
+def _register_uninstall_entry():
+    """Entrada por-usuario (HKCU) en 'Agregar o quitar programas' — sin
+    admin, mismo criterio que el Run key de inicio con Windows. Se
+    reescribe cada vez que hay una instalación/actualización exitosa o
+    se crea el acceso directo del propio Launcher, para que Windows
+    sepa de este 'programa' apenas hay algo instalado que desinstalar."""
+    try:
+        self_exe = sys.executable if getattr(sys, "frozen", False) else __file__
+        if Path(self_exe).name.lower() in ("python.exe", "pythonw.exe", "py.exe"):
+            return
+        import winreg
+        size_kb = _folder_size_kb(Path(self_exe).parent) + _folder_size_kb(_install_root())
+        with winreg.CreateKey(winreg.HKEY_CURRENT_USER, _UNINSTALL_REG_PATH) as k:
+            winreg.SetValueEx(k, "DisplayName", 0, winreg.REG_SZ, "Eclipse Launcher")
+            winreg.SetValueEx(k, "DisplayIcon", 0, winreg.REG_SZ, self_exe)
+            winreg.SetValueEx(k, "DisplayVersion", 0, winreg.REG_SZ, LAUNCHER_VERSION)
+            winreg.SetValueEx(k, "Publisher", 0, winreg.REG_SZ, "Eclipse Zone")
+            winreg.SetValueEx(k, "InstallLocation", 0, winreg.REG_SZ, str(Path(self_exe).parent))
+            winreg.SetValueEx(k, "UninstallString", 0, winreg.REG_SZ, f'"{self_exe}" --uninstall')
+            winreg.SetValueEx(k, "QuietUninstallString", 0, winreg.REG_SZ, f'"{self_exe}" --uninstall --silent')
+            winreg.SetValueEx(k, "NoModify", 0, winreg.REG_DWORD, 1)
+            winreg.SetValueEx(k, "NoRepair", 0, winreg.REG_DWORD, 1)
+            if size_kb:
+                winreg.SetValueEx(k, "EstimatedSize", 0, winreg.REG_DWORD, size_kb)
+    except Exception:
+        pass
+
+
+def _unregister_uninstall_entry():
+    try:
+        import winreg
+        winreg.DeleteKey(winreg.HKEY_CURRENT_USER, _UNINSTALL_REG_PATH)
+    except Exception:
+        pass
+
+
+def _add_shortcut_path(path):
+    """Registra dónde se creó cada .lnk para poder borrarlo con certeza
+    al desinstalar (antes no se guardaba, así que un uninstall solo
+    podía adivinar Escritorio/Menú Inicio)."""
+    st = _load_state()
+    paths = st.get("shortcut_paths", [])
+    path = str(path)
+    if path not in paths:
+        paths.append(path)
+    _save_state(shortcut_paths=paths)
+
+
+def _remove_known_shortcuts():
+    st = _load_state()
+    for p in st.get("shortcut_paths", []):
+        try:
+            Path(p).unlink(missing_ok=True)
+        except Exception:
+            pass
+    # Fallback por si el estado se perdió: rutas estándar conocidas.
+    for name in ("Eclipse Tools.lnk", "Eclipse Launcher.lnk"):
+        for base in (Path(os.path.join(os.path.expanduser("~"), "Desktop")), _start_menu_dir()):
+            try:
+                (base / name).unlink(missing_ok=True)
+            except Exception:
+                pass
+
+
+def _uninstall_tools_files():
+    """Borra SOLO lo que pertenece a Eclipse Tools (la app instalada),
+    dejando el Launcher intacto — usado tanto por Api.uninstall_tools()
+    (botón en la UI) como por _uninstall_everything() (desinstalar todo
+    desde Windows)."""
+    shutil.rmtree(_install_root(), ignore_errors=True)
+    appdata = os.environ.get("APPDATA")
+    if appdata:
+        shutil.rmtree(Path(appdata) / APP_NAME, ignore_errors=True)
+    for p in Path.home().glob(".eclipse_tools_*"):
+        try:
+            p.unlink()
+        except Exception:
+            pass
+    st = _load_state()
+    remaining = [p for p in st.get("shortcut_paths", []) if "eclipse tools" not in Path(p).stem.lower()]
+    for p in st.get("shortcut_paths", []):
+        if "eclipse tools" in Path(p).stem.lower():
+            try:
+                Path(p).unlink(missing_ok=True)
+            except Exception:
+                pass
+    for base in (Path(os.path.join(os.path.expanduser("~"), "Desktop")), _start_menu_dir()):
+        try:
+            (base / "Eclipse Tools.lnk").unlink(missing_ok=True)
+        except Exception:
+            pass
+    _save_state(installed_version="", shortcut_paths=remaining)
+
+
+def _uninstall_everything():
+    """Borrado en cascada completo — llamado desde 'Agregar o quitar
+    programas' (Launcher.exe --uninstall). Deja el sistema como si
+    Eclipse Launcher nunca se hubiera instalado."""
+    _uninstall_tools_files()
+    local = os.environ.get("LOCALAPPDATA")
+    if local:
+        try:
+            (Path(local) / APP_NAME / "launcher_state.json").unlink(missing_ok=True)
+        except Exception:
+            pass
+    _set_startup_enabled(False)
+    _remove_known_shortcuts()
+    _unregister_uninstall_entry()
+    # El proceso no puede borrar su propia carpeta mientras sigue
+    # corriendo — se lanza un .bat de un solo uso que espera a que este
+    # proceso termine y recién ahí borra la carpeta (mismo truco que
+    # cualquier auto-borrado en Windows, ya usado antes en este proyecto
+    # para el self-updater que se quitó de Eclipse Tools).
+    try:
+        self_exe = sys.executable if getattr(sys, "frozen", False) else None
+        if self_exe:
+            install_dir = Path(self_exe).parent
+            bat = Path(tempfile.gettempdir()) / "eclipse_launcher_uninstall.bat"
+            bat.write_text(
+                "@echo off\r\n"
+                "timeout /t 2 /nobreak > nul\r\n"
+                f'rmdir /s /q "{install_dir}"\r\n'
+                f'del "%~f0"\r\n',
+                encoding="utf-8",
+            )
+            subprocess.Popen(
+                ["cmd", "/c", str(bat)],
+                creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0),
+            )
+    except Exception:
+        pass
+
+
 def _find_installed_exe():
     """Busca el .exe principal dentro de la carpeta instalada — no se
     asume un nombre fijo (puede cambiar entre versiones, ver el mismo
@@ -135,6 +285,44 @@ def _find_installed_exe():
     if not exes:
         return None
     return max(exes, key=lambda p: p.stat().st_size)
+
+
+def _find_stray_tools_install():
+    """Busca una instalación de Eclipse Tools hecha A MANO (zip bajado
+    directo, no a través del Launcher) en ubicaciones típicas donde la
+    gente descomprime cosas — Escritorio, Descargas, Documentos.
+
+    Señal de que existe algo en algún lado: ~/.eclipse_tools_prefs.json
+    (Eclipse Tools lo crea la primera vez que corre, sin importar dónde
+    esté el .exe — mismo dotfile que ya usa _uninstall_everything() vía
+    Path.home().glob(".eclipse_tools_*")). Si existe pero
+    _find_installed_exe() (que solo mira _install_root(), la carpeta
+    gestionada por el Launcher) no encuentra nada, hay una copia suelta
+    sin gestionar. Devuelve la carpeta que contiene el .exe encontrado,
+    o None si no hay indicios de nada."""
+    if _find_installed_exe() is not None:
+        return None
+    if not (Path.home() / ".eclipse_tools_prefs.json").exists():
+        return None
+    search_roots = [
+        Path(os.path.join(os.path.expanduser("~"), "Desktop")),
+        Path(os.path.join(os.path.expanduser("~"), "Downloads")),
+        Path(os.path.join(os.path.expanduser("~"), "Documents")),
+    ]
+    for base in search_roots:
+        if not base.is_dir():
+            continue
+        try:
+            for exe in base.glob("**/Eclipse Tools.exe"):
+                # Ignora carpetas de build dentro del propio repo de código
+                # fuente (Eclipse-Source\EclipseTools\dist_nuitka*) — no son
+                # una instalación de usuario, son output de compilar.
+                if "eclipse-source" in str(exe).lower():
+                    continue
+                return exe.parent
+        except Exception:
+            continue
+    return None
 
 
 def _ver(v_str):
@@ -182,19 +370,24 @@ def _verify_sha256(path, expected):
     return h.hexdigest().lower() == expected.strip().lower()
 
 
-def _create_desktop_shortcut(target_exe, dest_dir=None, log=None):
+def _create_desktop_shortcut(target_exe, dest_dir=None, log=None, shortcut_name="Eclipse Tools"):
     """Crea un .lnk sin depender de pywin32 (mantener el launcher LO
     MÁS CHICO Y ABURRIDO POSIBLE — cuantas menos libs raras, menos
     superficie para que un antivirus dude). Se arma con un mini-script
     de PowerShell vía el objeto COM WScript.Shell, que ya trae Windows
-    de fábrica — cero dependencias nuevas."""
+    de fábrica — cero dependencias nuevas.
+
+    shortcut_name: además del acceso a Eclipse Tools.exe, se usa el
+    mismo helper para crear el del propio Eclipse Launcher.exe — así
+    el usuario siempre tiene forma fácil de volver acá para actualizar
+    (mismo patrón que "abrir el launcher del juego para actualizar")."""
     log = log or (lambda s: None)
     try:
         if dest_dir is None:
             dest_dir = Path(os.path.join(os.path.expanduser("~"), "Desktop"))
         dest_dir = Path(dest_dir)
         dest_dir.mkdir(parents=True, exist_ok=True)
-        lnk_path = dest_dir / "Eclipse Tools.lnk"
+        lnk_path = dest_dir / f"{shortcut_name}.lnk"
         target_exe = str(target_exe)
         work_dir = str(Path(target_exe).parent)
         ps = (
@@ -223,6 +416,20 @@ class Api:
     def set_window(self, w):
         self._window = w
 
+    def minimize_window(self, _=None):
+        # BUGFIX reportado: el botón minimizar/cerrar del titlebar propio
+        # llamaba a "pywebview.window.minimize()"/"window.close()" del lado
+        # JS, pero pywebview no expone ningún objeto "pywebview.window" —
+        # solo expone los métodos que se pasan como js_api (esta clase). El
+        # bridge real para controlar la ventana es este, vía self._window
+        # (ya seteado por set_window en main()).
+        if self._window:
+            self._window.minimize()
+
+    def close_window(self, _=None):
+        if self._window:
+            self._window.destroy()
+
     def get_state(self, _=None):
         """v1.0.1 — ahora TAMBIÉN chequea si hay una actualización de
         Eclipse Tools disponible (no solo si está instalado). Antes el
@@ -245,12 +452,14 @@ class Api:
                 update_available = True
         except Exception:
             pass
+        stray = _find_stray_tools_install()
         return {
             "installed": installed_exe is not None,
             "installedVersion": installed_v,
             "launcherVersion": LAUNCHER_VERSION,
             "updateAvailable": update_available,
             "latestVersion": latest_v,
+            "strayInstallPath": str(stray) if stray else "",
         }
 
     def check_and_install(self, shortcut_mode="desktop", call_id=None):
@@ -351,7 +560,10 @@ class Api:
                         # en vez de caer de nuevo al Escritorio sin avisar.
                         emit("done", {"launched": False, "upToDate": False, "version": latest_v, "noShortcut": True})
                         return
-                _create_desktop_shortcut(exe, dest_dir=shortcut_dir)
+                if _create_desktop_shortcut(exe, dest_dir=shortcut_dir):
+                    dest = shortcut_dir or Path(os.path.join(os.path.expanduser("~"), "Desktop"))
+                    _add_shortcut_path(Path(dest) / "Eclipse Tools.lnk")
+                _register_uninstall_entry()
 
                 emit("done", {"launched": False, "upToDate": False, "version": latest_v})
             except urllib.error.URLError as e:
@@ -391,6 +603,55 @@ class Api:
             pass
         return {"ok": True}
 
+    def create_launcher_shortcut(self, _=None):
+        """Acceso directo al PROPIO Eclipse Launcher.exe (no al de
+        Eclipse Tools) — para que el usuario tenga una forma fácil de
+        volver acá y buscar actualizaciones, ahora que este launcher es
+        el único lugar donde Eclipse Tools se instala/actualiza (mismo
+        criterio que el launcher de cualquier juego: siempre queda un
+        acceso directo al launcher, no solo al juego)."""
+        try:
+            self_exe = Path(sys.executable)
+        except Exception:
+            return {"ok": False, "msg": "No se pudo determinar la ruta de este ejecutable."}
+        if self_exe.name.lower() in ("python.exe", "pythonw.exe", "py.exe"):
+            return {"ok": False, "msg": "Este acceso directo solo funciona en el build compilado."}
+        ok = _create_desktop_shortcut(self_exe, shortcut_name="Eclipse Launcher")
+        if not ok:
+            return {"ok": False, "msg": "No se pudo crear el acceso directo."}
+        _add_shortcut_path(Path(os.path.join(os.path.expanduser("~"), "Desktop")) / "Eclipse Launcher.lnk")
+        _register_uninstall_entry()
+        return {"ok": True}
+
+    def resolve_stray_install(self, action=None, _=None):
+        """Resuelve una instalación de Eclipse Tools encontrada suelta
+        (ver _find_stray_tools_install) — borra esa carpeta vieja para
+        que no queden dos copias. Tanto 'delete' como 'migrate' terminan
+        borrando la copia suelta: no se copian sus archivos porque no
+        hay forma de saber si esa versión está sana o corrupta — el
+        camino seguro es borrar y dejar que el usuario baje la última
+        versión desde el propio Launcher (flujo normal de
+        check_and_install)."""
+        stray = _find_stray_tools_install()
+        if stray is None:
+            return {"ok": True, "msg": "No se encontró ninguna instalación suelta."}
+        try:
+            shutil.rmtree(stray, ignore_errors=True)
+        except Exception as e:
+            return {"ok": False, "msg": str(e)}
+        return {"ok": True}
+
+    def uninstall_tools(self, _=None):
+        """Desinstala SOLO Eclipse Tools (borra App\\, datos locales,
+        acceso directo) — deja el Launcher intacto para poder volver a
+        instalar después. Botón '🗑 Desinstalar Eclipse Tools' del menú
+        ☰ (ver web/js/launcher.js)."""
+        try:
+            _uninstall_tools_files()
+        except Exception as e:
+            return {"ok": False, "msg": str(e)}
+        return {"ok": True}
+
     def get_settings(self, _=None):
         st = _load_state()
         return {
@@ -408,6 +669,63 @@ class Api:
         return {"ok": True}
 
 
+class _UninstallApi:
+    def __init__(self, window_ref):
+        self._window_ref = window_ref
+
+    def confirm(self, _=None):
+        _uninstall_everything()
+        try:
+            self._window_ref[0].destroy()
+        except Exception:
+            pass
+        return {"ok": True}
+
+    def cancel(self, _=None):
+        try:
+            self._window_ref[0].destroy()
+        except Exception:
+            pass
+        return {"ok": True}
+
+
+def run_uninstaller(silent=False):
+    """Modo desinstalador — se invoca como '<Launcher.exe> --uninstall',
+    que es el UninstallString registrado en 'Agregar o quitar programas'
+    (ver _register_uninstall_entry). Con --silent no muestra ventana de
+    confirmación (QuietUninstallString), útil si Windows lo llama sin
+    interacción del usuario."""
+    if silent:
+        _uninstall_everything()
+        return
+    window_ref = [None]
+    api = _UninstallApi(window_ref)
+    html = """<!doctype html><html><head><meta charset="utf-8"><style>
+      body{margin:0;background:#0b0e14;color:#eef3f7;font-family:"Segoe UI",sans-serif;
+        display:flex;flex-direction:column;align-items:center;justify-content:center;height:100vh;text-align:center}
+      h2{margin:0 0 10px;font-size:16px}
+      p{color:#b7c2cf;font-size:12.5px;max-width:320px;line-height:1.6}
+      .row{display:flex;gap:10px;margin-top:18px}
+      button{border:none;border-radius:8px;padding:10px 20px;font-weight:700;font-size:12.5px;cursor:pointer}
+      #yes{background:#ff6b6b;color:#fff}
+      #no{background:rgba(255,255,255,.08);color:#eef3f7}
+    </style></head><body>
+      <h2>Desinstalar Eclipse Launcher</h2>
+      <p>Esto borra Eclipse Launcher, Eclipse Tools, sus accesos directos y todos los datos guardados
+         (glosario, caché de traducción, preferencias). No se puede deshacer.</p>
+      <div class="row"><button id="no">Cancelar</button><button id="yes">Desinstalar todo</button></div>
+      <script>
+        document.getElementById("yes").onclick = () => window.pywebview.api.confirm();
+        document.getElementById("no").onclick = () => window.pywebview.api.cancel();
+      </script>
+    </body></html>"""
+    window_ref[0] = webview.create_window(
+        "Desinstalar Eclipse Launcher", html=html, js_api=api,
+        width=420, height=260, resizable=False, background_color="#0b0e14",
+    )
+    webview.start()
+
+
 def main():
     # v1.0.2 — ver comentario grande junto a easy_drag más abajo: sin
     # esto, CUALQUIER mousedown en toda la ventana arranca un arrastre
@@ -420,10 +738,35 @@ def main():
     # en index.html) — todo lo demás sigue siendo un click normal.
     webview.settings['DRAG_REGION_DIRECT_TARGET_ONLY'] = True
 
+    # v1.0.3 — BUGFIX reportado: correr el launcher varias veces seguidas
+    # durante desarrollo mostraba una versión vieja de web/index.html,
+    # web/css/style.css o web/js/launcher.js aunque el archivo en disco ya
+    # tenía los cambios nuevos. El backend de WebView2 que usa pywebview
+    # cachea recursos file:// entre sesiones vía su carpeta de datos de
+    # usuario — el query string en la URL de index.html solo evitaba el
+    # caché del PROPIO index.html, no el de style.css/launcher.js (que se
+    # piden con su URL de siempre, sin cambios, así que WebView2 seguía
+    # sirviendo la versión vieja de esos dos). Ahora se genera una copia
+    # de index.html con el mtime real de cada archivo referenciado
+    # (placeholders __CSS_MTIME__/__JS_MTIME__), forzando URLs distintas
+    # para los tres recursos en cada edición, sin tocar el index.html
+    # original en disco.
+    web_dir = os.path.join(_HERE, "web")
+    index_src_path = os.path.join(web_dir, "index.html")
+    css_mtime = int(os.path.getmtime(os.path.join(web_dir, "css", "style.css")))
+    js_mtime = int(os.path.getmtime(os.path.join(web_dir, "js", "launcher.js")))
+    with open(index_src_path, "r", encoding="utf-8") as f:
+        index_html = f.read()
+    index_html = index_html.replace("__CSS_MTIME__", str(css_mtime))
+    index_html = index_html.replace("__JS_MTIME__", str(js_mtime))
+    index_path = os.path.join(web_dir, "_index_generated.html")
+    with open(index_path, "w", encoding="utf-8") as f:
+        f.write(index_html)
+    cache_bust = int(os.path.getmtime(index_src_path))
     api = Api()
     window = webview.create_window(
         "Eclipse Launcher",
-        os.path.join(_HERE, "web", "index.html"),
+        f"{index_path}?v={cache_bust}",
         js_api=api,
         width=1180, height=760, min_size=(980, 640),
         resizable=True,
@@ -449,4 +792,7 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    if "--uninstall" in sys.argv:
+        run_uninstaller(silent="--silent" in sys.argv)
+    else:
+        main()

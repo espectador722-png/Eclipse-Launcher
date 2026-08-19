@@ -60,6 +60,8 @@ Eclipse Tools es el traductor real — la herramienta con IA que instala este la
 | 🎵 **Radio integrada** | Reproductor de música flotante, la misma playlist que usamos en la web. |
 | 🪶 **Liviano** | Sin licencia, sin motores de traducción — nada de peso muerto, solo lo justo para instalar. |
 | 🖥️ **Sin admin** | Se instala en tu carpeta de usuario (`%LOCALAPPDATA%`) — nunca pide privilegios de administrador. |
+| 📋 **Registrado como programa** | Aparece en *Configuración → Aplicaciones* de Windows, como cualquier otro programa instalado. |
+| 🗑️ **Se desinstala prolijo** | Desde Windows (Agregar o quitar programas) borra todo en cascada — Launcher, Eclipse Tools, accesos directos y datos guardados. También podés desinstalar solo Eclipse Tools desde el propio launcher, sin tocar el launcher. |
 
 <br>
 
@@ -76,12 +78,25 @@ Eclipse Tools queda instalado en `%LOCALAPPDATA%\EclipseTools\App\`.
 
 <br>
 
+## 🗑️ Cómo desinstalar
+
+**Todo (Launcher + Eclipse Tools):** desde *Configuración → Aplicaciones* de Windows, buscá
+"Eclipse Launcher" y desinstalalo ahí — igual que cualquier programa. Esto borra la instalación,
+los accesos directos, el inicio automático con Windows y todos los datos guardados (glosario, caché
+de traducción, preferencias). No hace falta ni recomendable borrar el `.exe` a mano: así Windows no
+se entera y quedan sobras.
+
+**Solo Eclipse Tools (sin tocar el Launcher):** abrí Eclipse Launcher → menú ☰ → "Desinstalar Eclipse
+Tools". El launcher queda instalado y listo para reinstalar cuando quieras.
+
+<br>
+
 ## 🤔 ¿Por qué un launcher aparte?
 
 Para que la primera descarga sea lo más simple y confiable posible — sin depender de un host de
-archivos genérico ni de que Windows dude del `.zip` que acabás de bajar. Eclipse Tools se sigue
-actualizando solo desde adentro una vez instalado (**Config → Buscar actualizaciones**); este
-launcher es la puerta de entrada inicial, y una forma alternativa de mantenerlo al día cuando quieras.
+archivos genérico ni de que Windows dude del `.zip` que acabás de bajar. Eclipse Tools **ya no se
+actualiza solo**: este launcher es el único lugar donde se instala y actualiza, igual que el
+launcher de cualquier juego (HoYoPlay, Steam, etc.) — abrilo cuando quieras estar al día.
 
 <br>
 

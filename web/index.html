@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <title>Eclipse Launcher</title>
-<link rel="stylesheet" href="css/style.css">
+<link rel="stylesheet" href="css/style.css?v=__CSS_MTIME__">
 </head>
 <body>
 
@@ -29,6 +29,9 @@
       <stop offset="0%" stop-color="#25d3ee" stop-opacity=".35"/>
       <stop offset="100%" stop-color="#25d3ee" stop-opacity="0"/>
     </radialGradient>
+    <clipPath id="moon-clip">
+      <circle cx="900" cy="330" r="150"/>
+    </clipPath>
   </defs>
 
   <circle cx="900" cy="330" r="330" fill="url(#glow-soft)"/>
@@ -36,6 +39,8 @@
   <circle class="hero-art-ring" cx="900" cy="330" r="235" fill="none" stroke="rgba(37,211,238,.12)" stroke-width="1"/>
   <circle cx="900" cy="330" r="190" fill="url(#corona)"/>
   <circle cx="900" cy="330" r="150" fill="url(#moon)"/>
+  <!-- Avatar dentro del área interior de la luna, recortado en círculo. -->
+  <image href="img/hero-avatar.png" x="750" y="180" width="300" height="300" clip-path="url(#moon-clip)" preserveAspectRatio="xMidYMid slice"/>
   <circle cx="900" cy="330" r="150" fill="none" stroke="rgba(37,211,238,.5)" stroke-width="1.5"/>
 
   <g class="hero-art-stars">
@@ -87,6 +92,7 @@
 
 <!-- Rail de links sociales, arriba a la derecha -->
 <nav class="social-rail">
+  <button class="social-btn" id="btn-wiki" title="Información">📖</button>
   <a href="#" class="social-btn" data-link="discord" title="Discord">💬</a>
   <a href="#" class="social-btn" data-link="docs" title="Documentación">📘</a>
   <a href="#" class="social-btn" data-link="web" title="Sitio web">🌐</a>
@@ -99,20 +105,33 @@
     <p class="hero-sub">Traducí tus visual novels favoritas — Ren'Py, RPG Maker, Godot y Unity.</p>
   </div>
 
+  <!-- Aviso de instalación de Eclipse Tools encontrada fuera del Launcher
+       (ver _find_stray_tools_install en launcher.py) — evita terminar con
+       dos copias en la PC. -->
+  <div class="stray-banner" id="stray-banner" hidden>
+    <span class="stray-banner-icon">⚠️</span>
+    <span class="stray-banner-text">
+      Encontramos una instalación de Eclipse Tools en <code id="stray-banner-path"></code> que no está
+      gestionada por el Launcher. Para evitar tener dos copias, te recomendamos borrarla.
+    </span>
+    <button class="stray-banner-btn" id="stray-banner-delete">Borrar copia vieja</button>
+    <button class="stray-banner-dismiss" id="stray-banner-dismiss" title="Cerrar">✕</button>
+  </div>
+
   <!-- Tarjeta de novedades flotante, estilo carrusel -->
   <section class="news-card">
     <div class="news-carousel" id="news-carousel">
-      <div class="news-slide active">
+      <div class="news-slide active" data-news="0">
         <div class="news-slide-tag">NOVEDAD</div>
         <div class="news-slide-title">Motor Multi-Engine renovado</div>
         <div class="news-slide-sub">Google + Yandex + MyMemory, más rápido y confiable.</div>
       </div>
-      <div class="news-slide">
+      <div class="news-slide" data-news="1">
         <div class="news-slide-tag">MEJORA</div>
         <div class="news-slide-title">Interfaz reorganizada</div>
         <div class="news-slide-sub">Secciones plegables en Ren'Py, RPG Maker y Config.</div>
       </div>
-      <div class="news-slide">
+      <div class="news-slide" data-news="2">
         <div class="news-slide-tag">FIX</div>
         <div class="news-slide-title">Nombres compuestos arreglados</div>
         <div class="news-slide-sub">"Uncle Pete" y similares ya traducen bien.</div>
@@ -190,6 +209,7 @@
         <button data-action="redownload">⬇ Descargar de nuevo / reparar</button>
         <button data-action="folder">📂 Abrir carpeta de instalación</button>
         <button data-action="shortcut">🔗 Crear acceso directo</button>
+        <button data-action="uninstall-tools" class="more-menu-danger">🗑 Desinstalar Eclipse Tools</button>
       </div>
     </div>
   </div>
@@ -218,7 +238,31 @@
       <span>Carpeta de instalación</span>
       <button class="settings-link" id="settings-open-folder">Abrir carpeta</button>
     </div>
+    <div class="settings-row settings-row-static">
+      <span>Acceso directo al Launcher</span>
+      <button class="settings-link" id="settings-create-launcher-shortcut">Crear en el Escritorio</button>
+    </div>
     <div class="settings-foot">Eclipse Launcher v<span id="settings-version">—</span></div>
+  </div>
+</div>
+
+<!-- Confirmación para "Desinstalar Eclipse Tools" (botón en #more-menu)
+     — acción destructiva, mismo patrón visual que el resto de overlays. -->
+<div class="settings-overlay" id="uninstall-confirm-overlay" hidden>
+  <div class="settings-panel">
+    <div class="settings-head">
+      <h2>¿Desinstalar Eclipse Tools?</h2>
+      <button class="settings-close" id="uninstall-confirm-close">✕</button>
+    </div>
+    <p class="modal-msg">
+      Se borra la instalación, el acceso directo y los datos guardados (glosario, caché de traducción,
+      preferencias). Eclipse Launcher NO se desinstala — vas a poder volver a instalar Eclipse Tools
+      cuando quieras.
+    </p>
+    <div class="row" style="display:flex;gap:10px;margin-top:16px;justify-content:flex-end">
+      <button class="settings-link" id="uninstall-confirm-cancel">Cancelar</button>
+      <button class="settings-link" id="uninstall-confirm-yes" style="background:var(--danger);color:#fff">Desinstalar</button>
+    </div>
   </div>
 </div>
 
@@ -237,6 +281,21 @@
   </div>
 </div>
 
-<script src="js/launcher.js"></script>
+<!-- Wiki/Info — panel de pantalla completa estilo "página de personaje" de
+     HoYoPlay: sidebar de categorías a la izquierda, contenido grande a la
+     derecha, tira de miniaturas abajo para saltar entre entradas. Todo el
+     contenido se arma en JS (WIKI_CATEGORIES en launcher.js). -->
+<div class="wiki-overlay" id="wiki-overlay" hidden>
+  <div class="wiki-panel">
+    <button class="wiki-close" id="wiki-close" title="Cerrar">✕</button>
+    <nav class="wiki-sidebar" id="wiki-sidebar"></nav>
+    <div class="wiki-main">
+      <div class="wiki-content" id="wiki-content"></div>
+      <div class="wiki-strip" id="wiki-strip"></div>
+    </div>
+  </div>
+</div>
+
+<script src="js/launcher.js?v=__JS_MTIME__"></script>
 </body>
 </html>
