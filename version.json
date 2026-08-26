@@ -1,6 +1,6 @@
 {
-  "launcher_version": "1.0.6",
+  "launcher_version": "1.0.8",
   "launcher_asset_name": "Eclipse Launcher.zip",
-  "launcher_sha256": "0a131683b35835dd7da3d68aad05e2dcb234af68c6bce2ec708590bca0022c04",
-  "changelog": "- Corrección del botón de pausar música\n- Auto-actualización del Launcher"
+  "launcher_sha256": "3f591cbcdc3bf070882f13424704e162fd73ee8b18360b89a1f07919b4595215",
+  "changelog": "fix WebView2"
 }
