@@ -1,6 +1,6 @@
 {
-  "launcher_version": "1.0.15",
+  "launcher_version": "1.0.16",
   "launcher_asset_name": "Eclipse Launcher.zip",
-  "launcher_sha256": "2874ac5ffedde149e17b7619e531a3f4074e3e74549c409efe49889894b2b893",
-  "changelog": ""
+  "launcher_sha256": "a173a3b271e8aa4e269df1db03e1500b28a74ed30fc99c10a23bb0f404d6e7e7",
+  "changelog": "- Fix: error \"Acceso denegado\" que podía bloquear la descarga/actualización de Eclipse Tools la primera vez que se instalaba en Program Files.\n\n- Nuevo: aviso cuando se detecta una instalación anterior de Eclipse Tools fuera de la carpeta actual, con opción de moverla a la nueva ubicación o borrarla.\n\n- Fix: prolijidad visual del panel de novedades (tarjetas recortadas, textos amontonados)."
 }
