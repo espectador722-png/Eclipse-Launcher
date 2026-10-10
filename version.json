@@ -1,6 +1,6 @@
 {
-  "launcher_version": "1.1.17",
+  "launcher_version": "1.1.18",
   "launcher_asset_name": "Eclipse Launcher.zip",
-  "launcher_sha256": "ed95073c2e464edbe7cc0348e3e3c68e2384da283b08ba15079d3d42a0ea5f9e",
-  "changelog": ""
+  "launcher_sha256": "2c085c260657a6d24455bf377315e74856132bf59b260975385978f0f58574cd",
+  "changelog": "El acceso directo 'Eclipse Tools' ahora pasa por el Launcher: si estás al día abre Eclipse Tools directo; si hay una actualización obligatoria, la instala antes de abrirlo. Sin internet abre igual.\nLos accesos directos 'Eclipse Tools' que ya tenías (Escritorio / Menú Inicio) se migran solos la primera vez que abrís el Launcher.\nDesinstalar Eclipse Tools ya no borra la llave de licencia guardada: al reinstalar sigue activa."
 }
