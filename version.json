@@ -1,6 +1,6 @@
 {
-  "launcher_version": "1.1.19",
+  "launcher_version": "1.1.20",
   "launcher_asset_name": "Eclipse Launcher.zip",
-  "launcher_sha256": "f578e709d34319bc91bc2e42561f56ceaf0c7b4f222b8b42e9d1e5d577db5b6e",
-  "changelog": "Accesos directos: Eclipse Tools y el Launcher solo tocan el suyo, nunca el del otro. Al actualizar se busca el acceso anterior donde lo haya movido el usuario (Escritorio, Documentos, Descargas, Menú Inicio, barra de tareas) y se deja ahí; solo si no hay ninguno se crea uno nuevo en el Escritorio.\nNo se modifica ningún acceso directo que no apunte a nuestro programa."
+  "launcher_sha256": "c8c10a1495aedbe2117f44e43dff4ddb521dbcb80882cfad3376ae4ba9261f4c",
+  "changelog": "Si Windows no podía abrir la ventana del Launcher, ahora sigue en el navegador (Edge o el predeterminado).\nMenos señales de falso positivo en antivirus: los accesos directos ya no usan PowerShell oculto, la auto-actualización ya no usa un .bat oculto y el instalador no ejecuta nada oculto.\nNueva ayuda en Configuración: qué hacer si Windows Defender bloquea o borra Eclipse."
 }
