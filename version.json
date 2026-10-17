@@ -1,6 +1,6 @@
 {
-  "launcher_version": "1.1.20",
+  "launcher_version": "1.1.21",
   "launcher_asset_name": "Eclipse Launcher.zip",
-  "launcher_sha256": "c8c10a1495aedbe2117f44e43dff4ddb521dbcb80882cfad3376ae4ba9261f4c",
-  "changelog": "Si Windows no podía abrir la ventana del Launcher, ahora sigue en el navegador (Edge o el predeterminado).\nMenos señales de falso positivo en antivirus: los accesos directos ya no usan PowerShell oculto, la auto-actualización ya no usa un .bat oculto y el instalador no ejecuta nada oculto.\nNueva ayuda en Configuración: qué hacer si Windows Defender bloquea o borra Eclipse."
+  "launcher_sha256": "2bd0148042aa080f0b1c1a6ad0101b9f14f815a8a15f28a3f7b69427e342aecf",
+  "changelog": "Menos señales de falso positivo en antivirus: el acceso directo \"Eclipse Tools\" nuevo ya no lleva argumentos y el Launcher ya no revisa Documentos, Descargas ni la barra de tareas buscando accesos directos.\nLa actualización obligatoria de Eclipse Tools sigue funcionando desde el acceso directo."
 }
