@@ -1,6 +1,7 @@
 {
-  "launcher_version": "1.1.21",
+  "launcher_version": "1.1.22",
   "launcher_asset_name": "Eclipse Launcher.zip",
-  "launcher_sha256": "2bd0148042aa080f0b1c1a6ad0101b9f14f815a8a15f28a3f7b69427e342aecf",
-  "changelog": "Menos señales de falso positivo en antivirus: el acceso directo \"Eclipse Tools\" nuevo ya no lleva argumentos y el Launcher ya no revisa Documentos, Descargas ni la barra de tareas buscando accesos directos.\nLa actualización obligatoria de Eclipse Tools sigue funcionando desde el acceso directo."
+  "launcher_sha256": "86f6c14039bb928dc1e5006162ace287194c51b5f0f32688b3521d8a6bb9a42e",
+  "changelog": "El Launcher ahora puede exigir una versión mínima de sí mismo: si una versión vieja queda por debajo del mínimo, muestra la actualización sin opción de posponer y no abre Eclipse Tools hasta actualizarse.\nEsta versión fija el mínimo en 1.1.21. Sin otros cambios respecto de la 1.1.21.",
+  "min_launcher_version": "1.1.21"
 }
