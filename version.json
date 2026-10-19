@@ -1,7 +1,7 @@
 {
-  "launcher_version": "1.1.22",
+  "launcher_version": "1.1.23",
   "launcher_asset_name": "Eclipse Launcher.zip",
-  "launcher_sha256": "86f6c14039bb928dc1e5006162ace287194c51b5f0f32688b3521d8a6bb9a42e",
-  "changelog": "El Launcher ahora puede exigir una versión mínima de sí mismo: si una versión vieja queda por debajo del mínimo, muestra la actualización sin opción de posponer y no abre Eclipse Tools hasta actualizarse.\nEsta versión fija el mínimo en 1.1.21. Sin otros cambios respecto de la 1.1.21.",
+  "launcher_sha256": "b2cfd8451888e661298e050d9d2910cd29254a3c8500ae90e06761fc90032a7d",
+  "changelog": "El Launcher ahora informa a Eclipse Tools qué versión está ejecutando, para que Tools no se confunda con otra copia instalada y bloquee por error.\nSin otros cambios respecto de la 1.1.22. El mínimo obligatorio sigue en 1.1.21.",
   "min_launcher_version": "1.1.21"
 }
