@@ -12,7 +12,9 @@ Descarga, instala y mantiene actualizado tu traductor de visual novels — sin f
 
 <br>
 
-### 📥 [**Descargar Eclipse Launcher**](../../releases/latest)
+### 📥 [**Descargar Eclipse Launcher**](https://github.com/espectador722-png/Eclipse-Launcher/releases/latest/download/EclipseLauncher_Setup.exe)
+
+<sub>Descarga directa del instalador (`EclipseLauncher_Setup.exe`). El `.zip` de la página de releases es solo para el auto-update.</sub>
 
 <sub>Windows 10/11 · gratis · sin cuenta</sub>
 
