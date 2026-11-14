@@ -1,7 +1,7 @@
 {
-  "launcher_version": "1.1.23",
+  "launcher_version": "1.1.24",
   "launcher_asset_name": "Eclipse Launcher.zip",
-  "launcher_sha256": "b2cfd8451888e661298e050d9d2910cd29254a3c8500ae90e06761fc90032a7d",
-  "changelog": "El Launcher ahora informa a Eclipse Tools qué versión está ejecutando, para que Tools no se confunda con otra copia instalada y bloquee por error.\nSin otros cambios respecto de la 1.1.22. El mínimo obligatorio sigue en 1.1.21.",
+  "launcher_sha256": "de120649e786946de38f5d24399d02b8f85fe5a78e124aa827e35e319e2d2e9b",
+  "changelog": "Arreglado: al abrir el Launcher sin permisos de administrador ya no aparece \"Acceso denegado\" en Program Files; si no se puede escribir ahí, Eclipse Tools se instala en %LOCALAPPDATA%\\EclipseTools\\App sin pedir UAC.\nAl desinstalar también se limpia esa carpeta de respaldo. El mínimo obligatorio sigue en 1.1.21.",
   "min_launcher_version": "1.1.21"
 }
