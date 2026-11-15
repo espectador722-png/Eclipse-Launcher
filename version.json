@@ -1,7 +1,9 @@
 {
-  "launcher_version": "1.2.1",
+  "launcher_version": "1.2.2",
   "launcher_asset_name": "Eclipse Launcher.zip",
-  "launcher_sha256": "246da046f76fd508ea8f9c8951342b2a534efc48c2aee0449e5747962d71cccc",
-  "changelog": "Nuevo: cada app de Eclipse tiene su propia página. Eclipse Studio aparece en la barra izquierda (en uno de los \"?\") con su ícono, título, novedades, botón Descargar / Actualizar / Abrir editor y opción de desinstalar.\nEl mínimo obligatorio sigue en 1.1.21.",
-  "min_launcher_version": "1.1.21"
+  "launcher_sha256": "e859dd94458f96a65cc27a2748c8e919ff5862e2fb1c019d50ffa8eb184d7280",
+  "changelog": "Eclipse Launcher ahora se instala por usuario, sin pedir permisos de administrador. Las actualizaciones del Launcher se hacen con el instalador y se verifican por SHA-256 antes de ejecutarse. El Launcher ya no crea ni modifica accesos directos: los crea el instalador (Launcher, Eclipse Tools e Iniciar con Windows opcional); en Configuración hay un botón «Limpiar accesos antiguos» para borrar los que creó una versión anterior. Además: ya no cierra programas a la fuerza, no toca claves de Microsoft, no abre un servidor local y desinstalar el Launcher no borra Eclipse Tools sin preguntar.",
+  "min_launcher_version": "1.1.21",
+  "launcher_setup_asset_name": "EclipseLauncher_Setup.exe",
+  "launcher_setup_sha256": "e7130e64a55142d02e1c30b6382a2718c0e9161a132fde9b736d7343851e3b4f"
 }
