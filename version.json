@@ -1,7 +1,7 @@
 {
-  "launcher_version": "1.2.0",
+  "launcher_version": "1.2.1",
   "launcher_asset_name": "Eclipse Launcher.zip",
-  "launcher_sha256": "1c3fbe2cd56895447485aa9c45fd6ab9d39bf9167f4bfaada75297d13cb7fccb",
-  "changelog": "Nuevo: catálogo de apps. Además de Eclipse Tools, el Launcher puede descargar, actualizar y abrir otras apps de Eclipse (tarjetas en \"Más apps de Eclipse\"). Primera app prevista: Eclipse Studio, con botón \"Abrir editor\".\nEclipse Tools ahora muestra \"Abrir herramienta\" en vez de \"Jugar\". El mínimo obligatorio sigue en 1.1.21.",
+  "launcher_sha256": "246da046f76fd508ea8f9c8951342b2a534efc48c2aee0449e5747962d71cccc",
+  "changelog": "Nuevo: cada app de Eclipse tiene su propia página. Eclipse Studio aparece en la barra izquierda (en uno de los \"?\") con su ícono, título, novedades, botón Descargar / Actualizar / Abrir editor y opción de desinstalar.\nEl mínimo obligatorio sigue en 1.1.21.",
   "min_launcher_version": "1.1.21"
 }
