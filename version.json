@@ -1,9 +1,9 @@
 {
-  "launcher_version": "1.4.0",
+  "launcher_version": "1.5.0",
   "launcher_asset_name": "Eclipse Launcher.zip",
-  "launcher_sha256": "06940e52c14c9191af01a3c575ece3a79b72bcfe3b00c421b4c31e8aae57afc4",
-  "changelog": "Novedades: gestor de mods de RimWorld (botón 🧩) con reglas, perfiles, copia de seguridad y Workshop a pedido; nuevo tipo de app «Navegador» (Eclipse Browser disponible desde el Launcher); Escena Anime como fondo por defecto; la interfaz puede recibir mejoras sin reinstalar el Launcher (paquete firmado con vuelta atrás automática); el widget de radio ya no tapa los textos.",
+  "launcher_sha256": "8b459d70de402430510c1326fe11e039368c6dc5a887738b38941d70fd32e4f8",
+  "changelog": "Novedades: el gestor de mods ahora también maneja BeamNG.drive (activar y desactivar mods .zip); plan Free (1 juego) y Pro (todos los juegos, perfiles, copias, listas, Workshop y actualizaciones) con botón «Validar licencia»; el Launcher detecta tu licencia Pro de Eclipse Tools sin conectarse; interruptor remoto para desactivar SteamCMD si hiciera falta; ajustes visuales del gestor de mods.",
   "min_launcher_version": "1.1.21",
   "launcher_setup_asset_name": "EclipseLauncher_Setup.exe",
-  "launcher_setup_sha256": "d3f40c7cd0721dfb74d23f6b24ece0f83f3775c1becaf7e1ea32e7b7e7b1d9c5"
+  "launcher_setup_sha256": "32a79147f421f2ed60fc7cb2fc96d3f0ef3b4b3539d68948beae55e4c867b125"
 }
