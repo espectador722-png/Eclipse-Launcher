@@ -1,9 +1,9 @@
 {
-  "launcher_version": "1.5.0",
+  "launcher_version": "1.6.0",
   "launcher_asset_name": "Eclipse Launcher.zip",
-  "launcher_sha256": "8b459d70de402430510c1326fe11e039368c6dc5a887738b38941d70fd32e4f8",
-  "changelog": "Novedades: el gestor de mods ahora también maneja BeamNG.drive (activar y desactivar mods .zip); plan Free (1 juego) y Pro (todos los juegos, perfiles, copias, listas, Workshop y actualizaciones) con botón «Validar licencia»; el Launcher detecta tu licencia Pro de Eclipse Tools sin conectarse; interruptor remoto para desactivar SteamCMD si hiciera falta; ajustes visuales del gestor de mods.",
+  "launcher_sha256": "3782060da4cc9610a4f511b302734dd1d89c9dd90efdce084e6d139e59160deb",
+  "changelog": "Novedades: nueva pestaña Eclipse Automation: programá publicaciones y mirá la cola de traducción, los juegos listos, los avisos y el catálogo desde el Launcher; el gestor de mods ahora también maneja BeamNG.drive (activar y desactivar mods .zip); plan Free (1 juego) y Pro (todos los juegos, perfiles, copias, listas, Workshop y actualizaciones) con botón «Validar licencia»; el Launcher detecta tu licencia Pro de Eclipse Tools sin conectarse; interruptor remoto para desactivar SteamCMD si hiciera falta; ajustes visuales del gestor de mods.",
   "min_launcher_version": "1.1.21",
   "launcher_setup_asset_name": "EclipseLauncher_Setup.exe",
-  "launcher_setup_sha256": "32a79147f421f2ed60fc7cb2fc96d3f0ef3b4b3539d68948beae55e4c867b125"
+  "launcher_setup_sha256": "fce34454c09b06e3c938c6d22bc0311211b7a914762b1ae662d91045d11edc87"
 }
